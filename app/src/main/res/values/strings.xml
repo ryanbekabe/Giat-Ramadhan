@@ -4,8 +4,15 @@
     <string name="subtitle_giat">Checklist harian ibadah agar Ramadhan lebih seru dan terpantau.</string>
     <string name="label_hari">Pilih Tanggal Ramadhan</string>
     <string name="default_summary">Progress hari ini: 0/5 sholat, status puasa belum dipilih.</string>
+    <string name="default_score">Skor Hari Ini: 0</string>
+    <string name="default_achievement">Badge: Belum ada</string>
+    <string name="default_streak">Streak sempurna: 0 hari berturut-turut</string>
     <string name="label_sholat">Checklist Sholat 5 Waktu</string>
     <string name="label_puasa">Status Puasa</string>
+    <string name="label_catatan">Catatan Tadarus / Mengaji</string>
+    <string name="hint_catatan">Contoh: 1 Ramadhan sudah membaca Al Baqarah ayat 255</string>
+    <string name="label_grafik">Grafik Kinerja Ramadhan</string>
+    <string name="label_grafik_desc">Garis hijau: sholat. Garis oranye: puasa.</string>
     <string name="subuh">Subuh</string>
     <string name="dzuhur">Dzuhur</string>
     <string name="ashar">Ashar</string>
@@ -15,7 +22,17 @@
     <string name="tidak_puasa">Tidak Puasa</string>
     <string name="footer_note">Data tersimpan otomatis untuk setiap hari Ramadhan.</string>
     <string name="summary_format">Progress hari ini: %1$d/5 sholat, status puasa: %2$s.</string>
+    <string name="score_format">Skor Hari Ini: %1$d</string>
     <string name="status_puasa">Puasa</string>
     <string name="status_tidak_puasa">Tidak Puasa</string>
     <string name="status_belum">Belum dipilih</string>
+    <string name="legend_sholat">Sholat</string>
+    <string name="legend_puasa">Puasa</string>
+    <string name="streak_format">Streak sempurna: %1$d hari berturut-turut</string>
+    <string name="badge_belum">Belum Ada Badge</string>
+    <string name="badge_pemula">Pemula Konsisten (3 Hari)</string>
+    <string name="badge_terlatih">Terlatih (7 Hari)</string>
+    <string name="badge_hebat">Hebat (14 Hari)</string>
+    <string name="badge_juara">Juara Ramadhan (30 Hari)</string>
+    <string name="achievement_format">Badge: %1$s</string>
 </resources>
