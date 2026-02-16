@@ -173,6 +173,68 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:text="@string/label_waktu_sholat"
+                    android:textColor="#1A3C34"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textImsakTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#2F5249" />
+
+                <TextView
+                    android:id="@+id/textSubuhTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#2F5249" />
+
+                <TextView
+                    android:id="@+id/textZuhurTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#2F5249" />
+
+                <TextView
+                    android:id="@+id/textAsarTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#2F5249" />
+
+                <TextView
+                    android:id="@+id/textMagribTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#2F5249" />
+
+                <TextView
+                    android:id="@+id/textIsyaTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#2F5249" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#D8EFCF"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:text="@string/label_catatan"
                     android:textColor="#1A3C34"
                     android:textStyle="bold" />
@@ -285,6 +347,14 @@
             android:layout_marginTop="14dp"
             android:layout_marginBottom="8dp"
             android:text="@string/footer_note"
+            android:textColor="#4F6F52"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/about_text"
             android:textColor="#4F6F52"
             android:textSize="12sp" />
 

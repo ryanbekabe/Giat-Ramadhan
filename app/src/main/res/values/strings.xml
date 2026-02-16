@@ -9,6 +9,14 @@
     <string name="default_streak">Streak sempurna: 0 hari berturut-turut</string>
     <string name="label_sholat">Checklist Sholat 5 Waktu</string>
     <string name="label_puasa">Status Puasa</string>
+    <string name="label_waktu_sholat">Waktu Sholat Hari Ini</string>
+    <string name="waktu_template">%1$s: %2$s</string>
+    <string name="label_imsak">Imsak</string>
+    <string name="label_subuh_waktu">Subuh</string>
+    <string name="label_zuhur_waktu">Zuhur</string>
+    <string name="label_asar_waktu">Asar</string>
+    <string name="label_magrib_waktu">Magrib</string>
+    <string name="label_isya_waktu">Isya</string>
     <string name="label_catatan">Catatan Tadarus / Mengaji</string>
     <string name="hint_catatan">Contoh: 1 Ramadhan sudah membaca Al Baqarah ayat 255</string>
     <string name="label_grafik">Grafik Kinerja Ramadhan</string>
@@ -21,6 +29,7 @@
     <string name="puasa">Puasa</string>
     <string name="tidak_puasa">Tidak Puasa</string>
     <string name="footer_note">Data tersimpan otomatis untuk setiap hari Ramadhan.</string>
+    <string name="about_text">About: Apk MU version by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026</string>
     <string name="summary_format">Progress hari ini: %1$d/5 sholat, status puasa: %2$s.</string>
     <string name="score_format">Skor Hari Ini: %1$d</string>
     <string name="status_puasa">Puasa</string>

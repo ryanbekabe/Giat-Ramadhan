@@ -26,6 +26,9 @@ import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,6 +46,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textScore: TextView
     private lateinit var textAchievement: TextView
     private lateinit var textStreak: TextView
+    private lateinit var textImsakTime: TextView
+    private lateinit var textSubuhTime: TextView
+    private lateinit var textZuhurTime: TextView
+    private lateinit var textAsarTime: TextView
+    private lateinit var textMagribTime: TextView
+    private lateinit var textIsyaTime: TextView
     private lateinit var editCatatan: TextInputEditText
     private lateinit var lineChartProgress: LineChart
     private lateinit var toneGenerator: ToneGenerator
@@ -85,6 +94,12 @@ class MainActivity : AppCompatActivity() {
         textScore = findViewById(R.id.textScore)
         textAchievement = findViewById(R.id.textAchievement)
         textStreak = findViewById(R.id.textStreak)
+        textImsakTime = findViewById(R.id.textImsakTime)
+        textSubuhTime = findViewById(R.id.textSubuhTime)
+        textZuhurTime = findViewById(R.id.textZuhurTime)
+        textAsarTime = findViewById(R.id.textAsarTime)
+        textMagribTime = findViewById(R.id.textMagribTime)
+        textIsyaTime = findViewById(R.id.textIsyaTime)
         editCatatan = findViewById(R.id.editCatatan)
         lineChartProgress = findViewById(R.id.lineChartProgress)
     }
@@ -109,7 +124,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupDaySpinner() {
-        val days = (1..30).map { "Hari $it Ramadhan" }
+        val startDate = LocalDate.of(2026, 2, 18)
+        val localeId = Locale.forLanguageTag("id-ID")
+        val days = (1..30).map { day ->
+            val gregorianDate = startDate.plusDays((day - 1).toLong())
+            val dayName = gregorianDate.dayOfWeek.getDisplayName(TextStyle.FULL, localeId)
+            val monthName = gregorianDate.month.getDisplayName(TextStyle.FULL, localeId)
+            val prettyDayName = dayName.replaceFirstChar { it.titlecase(localeId) }
+            val prettyMonthName = monthName.replaceFirstChar { it.titlecase(localeId) }
+            "$day Ramadhan - $prettyDayName, ${gregorianDate.dayOfMonth} $prettyMonthName ${gregorianDate.year}"
+        }
         spinnerDay.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, days)
         spinnerDay.setSelection(0)
         spinnerDay.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
@@ -169,6 +193,7 @@ class MainActivity : AppCompatActivity() {
             else -> groupPuasa.clearCheck()
         }
         editCatatan.setText(prefs.getString(key(day, "catatan"), ""))
+        updatePrayerTimes(day)
 
         isUpdatingUi = false
         updateSummary()
@@ -333,5 +358,57 @@ class MainActivity : AppCompatActivity() {
         lineChartProgress.invalidate()
     }
 
+    private fun updatePrayerTimes(day: Int) {
+        val times = prayerTimesByDay.getOrNull(day - 1) ?: return
+        textImsakTime.text = getString(R.string.waktu_template, getString(R.string.label_imsak), times.imsak)
+        textSubuhTime.text = getString(R.string.waktu_template, getString(R.string.label_subuh_waktu), times.subuh)
+        textZuhurTime.text = getString(R.string.waktu_template, getString(R.string.label_zuhur_waktu), times.zuhur)
+        textAsarTime.text = getString(R.string.waktu_template, getString(R.string.label_asar_waktu), times.asar)
+        textMagribTime.text = getString(R.string.waktu_template, getString(R.string.label_magrib_waktu), times.magrib)
+        textIsyaTime.text = getString(R.string.waktu_template, getString(R.string.label_isya_waktu), times.isya)
+    }
+
     private fun key(day: Int, field: String): String = "day_${day}_$field"
+
+    private data class PrayerTimes(
+        val imsak: String,
+        val subuh: String,
+        val zuhur: String,
+        val asar: String,
+        val magrib: String,
+        val isya: String
+    )
+
+    private val prayerTimesByDay = listOf(
+        PrayerTimes("04:07", "04:17", "11:42", "14:57", "17:47", "18:56"),
+        PrayerTimes("04:07", "04:17", "11:42", "14:56", "17:47", "18:56"),
+        PrayerTimes("04:07", "04:17", "11:42", "14:55", "17:46", "18:56"),
+        PrayerTimes("04:07", "04:17", "11:42", "14:55", "17:46", "18:56"),
+        PrayerTimes("04:07", "04:17", "11:41", "14:54", "17:46", "18:55"),
+        PrayerTimes("04:07", "04:17", "11:41", "14:54", "17:46", "18:55"),
+        PrayerTimes("04:07", "04:17", "11:41", "14:53", "17:46", "18:55"),
+        PrayerTimes("04:07", "04:17", "11:41", "14:52", "17:45", "18:54"),
+        PrayerTimes("04:07", "04:17", "11:41", "14:52", "17:45", "18:54"),
+        PrayerTimes("04:07", "04:17", "11:41", "14:51", "17:45", "18:54"),
+        PrayerTimes("04:07", "04:17", "11:40", "14:50", "17:45", "18:53"),
+        PrayerTimes("04:07", "04:17", "11:40", "14:49", "17:44", "18:53"),
+        PrayerTimes("04:07", "04:17", "11:40", "14:48", "17:44", "18:53"),
+        PrayerTimes("04:07", "04:17", "11:40", "14:48", "17:44", "18:52"),
+        PrayerTimes("04:07", "04:17", "11:40", "14:47", "17:44", "18:52"),
+        PrayerTimes("04:07", "04:17", "11:39", "14:46", "17:43", "18:52"),
+        PrayerTimes("04:07", "04:17", "11:39", "14:45", "17:43", "18:51"),
+        PrayerTimes("04:07", "04:17", "11:39", "14:44", "17:43", "18:51"),
+        PrayerTimes("04:07", "04:17", "11:39", "14:43", "17:42", "18:51"),
+        PrayerTimes("04:06", "04:16", "11:38", "14:42", "17:42", "18:50"),
+        PrayerTimes("04:06", "04:16", "11:38", "14:41", "17:42", "18:50"),
+        PrayerTimes("04:06", "04:16", "11:38", "14:40", "17:41", "18:50"),
+        PrayerTimes("04:06", "04:16", "11:38", "14:39", "17:41", "18:49"),
+        PrayerTimes("04:06", "04:16", "11:37", "14:38", "17:41", "18:49"),
+        PrayerTimes("04:06", "04:16", "11:37", "14:37", "17:40", "18:49"),
+        PrayerTimes("04:05", "04:15", "11:37", "14:36", "17:40", "18:48"),
+        PrayerTimes("04:05", "04:15", "11:37", "14:36", "17:40", "18:48"),
+        PrayerTimes("04:05", "04:15", "11:36", "14:37", "17:39", "18:48"),
+        PrayerTimes("04:05", "04:15", "11:36", "14:37", "17:39", "18:47"),
+        PrayerTimes("04:05", "04:15", "11:36", "14:38", "17:39", "18:47")
+    )
 }
