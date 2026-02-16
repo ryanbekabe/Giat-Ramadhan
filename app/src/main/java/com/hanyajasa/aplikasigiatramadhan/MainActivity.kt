@@ -7,9 +7,16 @@ import android.media.ToneGenerator
 import android.os.Bundle
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.app.AlertDialog
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.CheckBox
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -18,6 +25,7 @@ import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.mikephil.charting.charts.LineChart
@@ -29,6 +37,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
@@ -52,12 +61,34 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textAsarTime: TextView
     private lateinit var textMagribTime: TextView
     private lateinit var textIsyaTime: TextView
+    private lateinit var textAppVersion: TextView
+    private lateinit var textUpdateStatus: TextView
+    private lateinit var buttonCheckUpdate: Button
     private lateinit var editCatatan: TextInputEditText
     private lateinit var lineChartProgress: LineChart
     private lateinit var toneGenerator: ToneGenerator
 
     private var selectedDay = 1
     private var isUpdatingUi = false
+    private var downloadId: Long = -1L
+    private var receiverRegistered = false
+
+    companion object {
+        private const val CURRENT_VERSION = 20260217L
+        private const val VERSION_URL = "https://hanyajasa.com/apk/giatramadhan/versi.txt"
+        private const val APK_URL = "https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk"
+    }
+
+    private val downloadReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
+            val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
+            if (id != downloadId) return
+
+            textUpdateStatus.text = getString(R.string.update_status_downloaded)
+            installDownloadedApk(id)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,12 +103,15 @@ class MainActivity : AppCompatActivity() {
 
         prefs = getSharedPreferences("giat_ramadhan", MODE_PRIVATE)
         toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
+        loadPrayerTimesFromCsv()
 
         bindViews()
+        setupUpdateUi()
         setupChart()
         setupDaySpinner()
         setupListeners()
         loadDayData(selectedDay)
+        registerDownloadReceiver()
     }
 
     private fun bindViews() {
@@ -100,8 +134,94 @@ class MainActivity : AppCompatActivity() {
         textAsarTime = findViewById(R.id.textAsarTime)
         textMagribTime = findViewById(R.id.textMagribTime)
         textIsyaTime = findViewById(R.id.textIsyaTime)
+        textAppVersion = findViewById(R.id.textAppVersion)
+        textUpdateStatus = findViewById(R.id.textUpdateStatus)
+        buttonCheckUpdate = findViewById(R.id.buttonCheckUpdate)
         editCatatan = findViewById(R.id.editCatatan)
         lineChartProgress = findViewById(R.id.lineChartProgress)
+    }
+
+    private fun setupUpdateUi() {
+        textAppVersion.text = getString(R.string.app_version_label, CURRENT_VERSION.toString())
+        textUpdateStatus.text = getString(R.string.update_status_idle)
+        buttonCheckUpdate.setOnClickListener {
+            checkForUpdates()
+        }
+    }
+
+    private fun checkForUpdates() {
+        textUpdateStatus.text = getString(R.string.update_status_checking)
+        Thread {
+            runCatching {
+                URL(VERSION_URL).readText().trim()
+            }.onSuccess { versionText ->
+                val latest = versionText.toLongOrNull()
+                runOnUiThread {
+                    if (latest == null) {
+                        textUpdateStatus.text = getString(R.string.update_status_failed)
+                        return@runOnUiThread
+                    }
+
+                    if (latest > CURRENT_VERSION) {
+                        textUpdateStatus.text = getString(R.string.update_status_available, latest.toString())
+                        showUpdateDialog(latest.toString())
+                    } else {
+                        textUpdateStatus.text = getString(R.string.update_status_latest)
+                    }
+                }
+            }.onFailure {
+                runOnUiThread {
+                    textUpdateStatus.text = getString(R.string.update_status_failed)
+                }
+            }
+        }.start()
+    }
+
+    private fun showUpdateDialog(newVersion: String) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.update_dialog_title))
+            .setMessage(getString(R.string.update_dialog_message, newVersion))
+            .setPositiveButton(getString(R.string.update_yes)) { _, _ ->
+                downloadLatestApk()
+            }
+            .setNegativeButton(getString(R.string.update_no), null)
+            .show()
+    }
+
+    private fun downloadLatestApk() {
+        val request = DownloadManager.Request(android.net.Uri.parse(APK_URL))
+            .setTitle("Giat Ramadhan Update")
+            .setDescription("Mengunduh aplikasi terbaru...")
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "giatramadhan.apk")
+            .setMimeType("application/vnd.android.package-archive")
+
+        val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+        downloadId = dm.enqueue(request)
+        textUpdateStatus.text = getString(R.string.update_status_downloading)
+    }
+
+    private fun installDownloadedApk(downloadedId: Long) {
+        val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+        val apkUri = dm.getUriForDownloadedFile(downloadedId) ?: return
+
+        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(apkUri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        runCatching { startActivity(installIntent) }
+    }
+
+    private fun registerDownloadReceiver() {
+        if (receiverRegistered) return
+        ContextCompat.registerReceiver(
+            this,
+            downloadReceiver,
+            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        receiverRegistered = true
     }
 
     private fun setupChart() {
@@ -312,6 +432,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        if (receiverRegistered) {
+            unregisterReceiver(downloadReceiver)
+            receiverRegistered = false
+        }
         super.onDestroy()
         toneGenerator.release()
     }
@@ -359,13 +483,66 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePrayerTimes(day: Int) {
-        val times = prayerTimesByDay.getOrNull(day - 1) ?: return
+        val times = prayerTimesByDay.getOrNull(day - 1)
+        if (times == null) {
+            textImsakTime.text = getString(R.string.waktu_template, getString(R.string.label_imsak), "-")
+            textSubuhTime.text = getString(R.string.waktu_template, getString(R.string.label_subuh_waktu), "-")
+            textZuhurTime.text = getString(R.string.waktu_template, getString(R.string.label_zuhur_waktu), "-")
+            textAsarTime.text = getString(R.string.waktu_template, getString(R.string.label_asar_waktu), "-")
+            textMagribTime.text = getString(R.string.waktu_template, getString(R.string.label_magrib_waktu), "-")
+            textIsyaTime.text = getString(R.string.waktu_template, getString(R.string.label_isya_waktu), "-")
+            return
+        }
         textImsakTime.text = getString(R.string.waktu_template, getString(R.string.label_imsak), times.imsak)
         textSubuhTime.text = getString(R.string.waktu_template, getString(R.string.label_subuh_waktu), times.subuh)
         textZuhurTime.text = getString(R.string.waktu_template, getString(R.string.label_zuhur_waktu), times.zuhur)
         textAsarTime.text = getString(R.string.waktu_template, getString(R.string.label_asar_waktu), times.asar)
         textMagribTime.text = getString(R.string.waktu_template, getString(R.string.label_magrib_waktu), times.magrib)
         textIsyaTime.text = getString(R.string.waktu_template, getString(R.string.label_isya_waktu), times.isya)
+    }
+
+    private fun loadPrayerTimesFromCsv() {
+        val loaded = mutableListOf<PrayerTimes>()
+        runCatching {
+            assets.open("Ramadhan1447H.csv").bufferedReader().useLines { lines ->
+                lines.drop(1).forEach { line ->
+                    if (line.isBlank()) return@forEach
+                    val fields = parseCsvLine(line)
+                    if (fields.size < 10) return@forEach
+                    loaded.add(
+                        PrayerTimes(
+                            imsak = fields[2].trim(),
+                            subuh = fields[3].trim(),
+                            zuhur = fields[6].trim(),
+                            asar = fields[7].trim(),
+                            magrib = fields[8].trim(),
+                            isya = fields[9].trim()
+                        )
+                    )
+                }
+            }
+        }
+        prayerTimesByDay.clear()
+        prayerTimesByDay.addAll(loaded)
+    }
+
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val current = StringBuilder()
+        var inQuotes = false
+
+        line.forEach { ch ->
+            when {
+                ch == '"' -> inQuotes = !inQuotes
+                ch == ',' && !inQuotes -> {
+                    result.add(current.toString())
+                    current.clear()
+                }
+                else -> current.append(ch)
+            }
+        }
+        result.add(current.toString())
+        return result
     }
 
     private fun key(day: Int, field: String): String = "day_${day}_$field"
@@ -379,36 +556,5 @@ class MainActivity : AppCompatActivity() {
         val isya: String
     )
 
-    private val prayerTimesByDay = listOf(
-        PrayerTimes("04:07", "04:17", "11:42", "14:57", "17:47", "18:56"),
-        PrayerTimes("04:07", "04:17", "11:42", "14:56", "17:47", "18:56"),
-        PrayerTimes("04:07", "04:17", "11:42", "14:55", "17:46", "18:56"),
-        PrayerTimes("04:07", "04:17", "11:42", "14:55", "17:46", "18:56"),
-        PrayerTimes("04:07", "04:17", "11:41", "14:54", "17:46", "18:55"),
-        PrayerTimes("04:07", "04:17", "11:41", "14:54", "17:46", "18:55"),
-        PrayerTimes("04:07", "04:17", "11:41", "14:53", "17:46", "18:55"),
-        PrayerTimes("04:07", "04:17", "11:41", "14:52", "17:45", "18:54"),
-        PrayerTimes("04:07", "04:17", "11:41", "14:52", "17:45", "18:54"),
-        PrayerTimes("04:07", "04:17", "11:41", "14:51", "17:45", "18:54"),
-        PrayerTimes("04:07", "04:17", "11:40", "14:50", "17:45", "18:53"),
-        PrayerTimes("04:07", "04:17", "11:40", "14:49", "17:44", "18:53"),
-        PrayerTimes("04:07", "04:17", "11:40", "14:48", "17:44", "18:53"),
-        PrayerTimes("04:07", "04:17", "11:40", "14:48", "17:44", "18:52"),
-        PrayerTimes("04:07", "04:17", "11:40", "14:47", "17:44", "18:52"),
-        PrayerTimes("04:07", "04:17", "11:39", "14:46", "17:43", "18:52"),
-        PrayerTimes("04:07", "04:17", "11:39", "14:45", "17:43", "18:51"),
-        PrayerTimes("04:07", "04:17", "11:39", "14:44", "17:43", "18:51"),
-        PrayerTimes("04:07", "04:17", "11:39", "14:43", "17:42", "18:51"),
-        PrayerTimes("04:06", "04:16", "11:38", "14:42", "17:42", "18:50"),
-        PrayerTimes("04:06", "04:16", "11:38", "14:41", "17:42", "18:50"),
-        PrayerTimes("04:06", "04:16", "11:38", "14:40", "17:41", "18:50"),
-        PrayerTimes("04:06", "04:16", "11:38", "14:39", "17:41", "18:49"),
-        PrayerTimes("04:06", "04:16", "11:37", "14:38", "17:41", "18:49"),
-        PrayerTimes("04:06", "04:16", "11:37", "14:37", "17:40", "18:49"),
-        PrayerTimes("04:05", "04:15", "11:37", "14:36", "17:40", "18:48"),
-        PrayerTimes("04:05", "04:15", "11:37", "14:36", "17:40", "18:48"),
-        PrayerTimes("04:05", "04:15", "11:36", "14:37", "17:39", "18:48"),
-        PrayerTimes("04:05", "04:15", "11:36", "14:37", "17:39", "18:47"),
-        PrayerTimes("04:05", "04:15", "11:36", "14:38", "17:39", "18:47")
-    )
+    private val prayerTimesByDay = mutableListOf<PrayerTimes>()
 }
