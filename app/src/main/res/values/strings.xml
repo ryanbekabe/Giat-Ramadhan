@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Aplikasi Giat Ramadhan</string>
+    <string name="title_giat">Giat Ramadhan 1447 H</string>
+    <string name="subtitle_giat">Checklist harian ibadah agar Ramadhan lebih seru dan terpantau.</string>
+    <string name="label_hari">Pilih Tanggal Ramadhan</string>
+    <string name="default_summary">Progress hari ini: 0/5 sholat, status puasa belum dipilih.</string>
+    <string name="label_sholat">Checklist Sholat 5 Waktu</string>
+    <string name="label_puasa">Status Puasa</string>
+    <string name="subuh">Subuh</string>
+    <string name="dzuhur">Dzuhur</string>
+    <string name="ashar">Ashar</string>
+    <string name="maghrib">Maghrib</string>
+    <string name="isya">Isya</string>
+    <string name="puasa">Puasa</string>
+    <string name="tidak_puasa">Tidak Puasa</string>
+    <string name="footer_note">Data tersimpan otomatis untuk setiap hari Ramadhan.</string>
+    <string name="summary_format">Progress hari ini: %1$d/5 sholat, status puasa: %2$s.</string>
+    <string name="status_puasa">Puasa</string>
+    <string name="status_tidak_puasa">Tidak Puasa</string>
+    <string name="status_belum">Belum dipilih</string>
+</resources>
