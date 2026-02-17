@@ -10,9 +10,9 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
 
 - Checklist harian 1-30 Ramadhan.
 - Tanggal Ramadhan dilengkapi hari dan tanggal Masehi.
-- Checklist Sholat 5 waktu: Subuh, Dzuhur, Ashar, Maghrib, Isya.
+- Checklist Sholat 5 waktu + Tarawih dan Witir: Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir.
 - Status puasa harian: `Puasa` atau `Tidak Puasa`.
-- Skor harian otomatis (0-100): 5 sholat + puasa bernilai penuh 100.
+- Skor harian otomatis (0-100): 5 sholat + Tarawih Witir + puasa bernilai penuh 100.
 - Ringkasan progres harian langsung di layar utama.
 - Grafik kinerja Ramadhan (line chart) dengan sumbu hari lengkap `1-30`:
   - Garis hijau: progres sholat per hari.
@@ -80,7 +80,7 @@ https://github.com/ryanbekabe/Giat-Ramadhan/releases
 
 ## Donasi Pengembangan
 
-Jika ingin mendukung pengembangan aplikasi ini, Anda dapat melakukan donasi melalui transfer QRIS dengan scan gambar berikut:
+Jika ingin mendukung pengembangan aplikasi ini, atau merasa aplikasi ini bermanfaat, Anda dapat melakukan donasi melalui transfer QRIS dengan scan gambar berikut:
 
 ![QRIS Donasi](6170174619466271873.jpg)
 ```
