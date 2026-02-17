@@ -32,6 +32,15 @@
     <string name="tidak_puasa">Tidak Puasa</string>
     <string name="footer_note">Data tersimpan otomatis untuk setiap hari Ramadhan.</string>
     <string name="button_about">About</string>
+    <string name="button_masukan_saran">Masukan &amp; Saran</string>
+    <string name="masukan_dialog_title">Masukan dan Saran</string>
+    <string name="masukan_dialog_hint">Tulis masukan atau saran Anda</string>
+    <string name="masukan_kirim">Kirim</string>
+    <string name="masukan_batal">Batal</string>
+    <string name="masukan_kosong">Pesan tidak boleh kosong.</string>
+    <string name="masukan_status_mengirim">Status masukan: mengirim...</string>
+    <string name="masukan_status_berhasil">Status masukan: berhasil dikirim</string>
+    <string name="masukan_status_gagal">Status masukan: gagal dikirim</string>
     <string name="about_dialog_title">About</string>
     <string name="about_dialog_message">About: Apk MU version [%1$s] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026</string>
     <string name="donasi_title">Jika ingin donasi pengembangan aplikasi ini, silakan scan QRIS atau transfer ke rekening berikut:</string>

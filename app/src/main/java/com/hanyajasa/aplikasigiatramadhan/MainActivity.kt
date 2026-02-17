@@ -31,6 +31,7 @@ import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 import com.google.android.material.textfield.TextInputEditText
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -79,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textAppVersion: TextView
     private lateinit var textUpdateStatus: TextView
     private lateinit var buttonAbout: Button
+    private lateinit var buttonMasukanSaran: Button
     private lateinit var buttonCheckUpdate: Button
     private lateinit var gridHeatmap: GridLayout
     private lateinit var editCatatan: TextInputEditText
@@ -94,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     private val startupHandler = Handler(Looper.getMainLooper())
 
     companion object {
-        private const val CURRENT_VERSION = 20260218
+        private const val CURRENT_VERSION = 20260217
         private const val VERSION_URL = "https://hanyajasa.com/apk/giatramadhan/versi.txt"
         private const val APK_URL = "https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk"
     }
@@ -159,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         textAppVersion = findViewById(R.id.textAppVersion)
         textUpdateStatus = findViewById(R.id.textUpdateStatus)
         buttonAbout = findViewById(R.id.buttonAbout)
+        buttonMasukanSaran = findViewById(R.id.buttonMasukanSaran)
         buttonCheckUpdate = findViewById(R.id.buttonCheckUpdate)
         gridHeatmap = findViewById(R.id.gridHeatmap)
         editCatatan = findViewById(R.id.editCatatan)
@@ -171,9 +174,71 @@ class MainActivity : AppCompatActivity() {
         buttonAbout.setOnClickListener {
             showAboutDialog()
         }
+        buttonMasukanSaran.setOnClickListener {
+            showMasukanSaranDialog()
+        }
         buttonCheckUpdate.setOnClickListener {
             checkForUpdates()
         }
+    }
+
+    private fun showMasukanSaranDialog() {
+        val input = TextInputEditText(this).apply {
+            hint = getString(R.string.masukan_dialog_hint)
+            minLines = 3
+            maxLines = 6
+        }
+
+        val density = resources.displayMetrics.density
+        val padding = (16 * density).toInt()
+        val container = LinearLayout(this).apply {
+            setPadding(padding, padding / 2, padding, 0)
+            addView(input)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.masukan_dialog_title))
+            .setView(container)
+            .setNegativeButton(getString(R.string.masukan_batal), null)
+            .setPositiveButton(getString(R.string.masukan_kirim)) { _, _ ->
+                val message = input.text?.toString()?.trim().orEmpty()
+                if (message.isBlank()) {
+                    Toast.makeText(this, getString(R.string.masukan_kosong), Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                sendMasukanSaran(message)
+            }
+            .show()
+    }
+
+    private fun sendMasukanSaran(message: String) {
+        if (!isInternetActive()) {
+            textUpdateStatus.text = getString(R.string.masukan_status_gagal)
+            return
+        }
+
+        textUpdateStatus.text = getString(R.string.masukan_status_mengirim)
+        Thread {
+            runCatching {
+                val encodedPayload = URLEncoder.encode(message, "UTF-8")
+                val endpoint = "https://hanyajasa.com/?MasukanSaranGiatRamadhan=$encodedPayload"
+                val connection = URL(endpoint).openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                connection.instanceFollowRedirects = true
+                connection.inputStream.use { it.readBytes() }
+                connection.disconnect()
+            }.onSuccess {
+                runOnUiThread {
+                    textUpdateStatus.text = getString(R.string.masukan_status_berhasil)
+                }
+            }.onFailure {
+                runOnUiThread {
+                    textUpdateStatus.text = getString(R.string.masukan_status_gagal)
+                }
+            }
+        }.start()
     }
 
     private fun showAboutDialog() {
@@ -776,5 +841,4 @@ class MainActivity : AppCompatActivity() {
 
     private val prayerTimesByDay = mutableListOf<PrayerTimes>()
 }
-
 

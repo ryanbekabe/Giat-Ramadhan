@@ -397,6 +397,13 @@
             android:layout_marginBottom="8dp"
             android:text="@string/button_about" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonMasukanSaran"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/button_masukan_saran" />
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

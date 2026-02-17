@@ -22,6 +22,12 @@ Aplikasi Android untuk membantu anak sekolah menjalani kegiatan Ramadhan 1447 H 
 - Animasi ringan + efek suara saat badge naik level.
 - Catatan tadarus/mengaji per hari.
 - Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) yang dibaca dari file CSV di `assets`.
+- Tombol `About` menampilkan:
+  - Info aplikasi: `About: Apk MU version [versi] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026`
+  - QRIS donasi + daftar rekening donasi.
+- Tombol `Masukan & Saran`:
+  - Pengguna dapat mengirim pesan masukan/saran dari dialog input.
+  - Pesan dikirim ke `https://hanyajasa.com/?MasukanSaranGiatRamadhan=...`
 - Informasi versi aplikasi saat ini: `20260218`.
 - Tombol `Cek Update`:
   - Cek versi online dari `https://hanyajasa.com/apk/giatramadhan/versi.txt`
@@ -52,7 +58,7 @@ Data aktivitas harian disimpan lokal menggunakan `SharedPreferences`, meliputi:
 - MPAndroidChart
 - SharedPreferences
 - DownloadManager (fitur update APK)
-- HttpURLConnection + ConnectivityManager (fitur statistik startup)
+- HttpURLConnection + ConnectivityManager (fitur statistik startup dan kirim masukan/saran)
 
 ## Download APK
 
@@ -79,4 +85,4 @@ Seabank : 901899706783
 
 ## About
 
-Apk MU version by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026
+Tersedia sebagai tombol `About` di aplikasi, menampilkan info versi dan informasi donasi.
