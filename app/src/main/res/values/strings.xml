@@ -21,6 +21,8 @@
     <string name="hint_catatan">Contoh: 1 Ramadhan sudah membaca Al Baqarah ayat 255</string>
     <string name="label_grafik">Grafik Kinerja Ramadhan</string>
     <string name="label_grafik_desc">Garis hijau: sholat. Garis oranye: puasa.</string>
+    <string name="label_heatmap">Kalender Heatmap Ramadhan</string>
+    <string name="label_heatmap_desc">Warna makin kuat berarti skor harian makin tinggi.</string>
     <string name="subuh">Subuh</string>
     <string name="dzuhur">Dzuhur</string>
     <string name="ashar">Ashar</string>

@@ -1,4 +1,4 @@
-package com.hanyajasa.aplikasigiatramadhan
+﻿package com.hanyajasa.aplikasigiatramadhan
 
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -18,6 +18,7 @@ import android.text.TextWatcher
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.GridLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Spinner
@@ -29,11 +30,15 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.ValueFormatter
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
@@ -64,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textAppVersion: TextView
     private lateinit var textUpdateStatus: TextView
     private lateinit var buttonCheckUpdate: Button
+    private lateinit var gridHeatmap: GridLayout
     private lateinit var editCatatan: TextInputEditText
     private lateinit var lineChartProgress: LineChart
     private lateinit var toneGenerator: ToneGenerator
@@ -72,9 +78,10 @@ class MainActivity : AppCompatActivity() {
     private var isUpdatingUi = false
     private var downloadId: Long = -1L
     private var receiverRegistered = false
+    private val heatmapCells = mutableListOf<TextView>()
 
     companion object {
-        private const val CURRENT_VERSION = 20260217L
+        private const val CURRENT_VERSION = 20260218
         private const val VERSION_URL = "https://hanyajasa.com/apk/giatramadhan/versi.txt"
         private const val APK_URL = "https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk"
     }
@@ -107,6 +114,7 @@ class MainActivity : AppCompatActivity() {
 
         bindViews()
         setupUpdateUi()
+        setupHeatmap()
         setupChart()
         setupDaySpinner()
         setupListeners()
@@ -137,6 +145,7 @@ class MainActivity : AppCompatActivity() {
         textAppVersion = findViewById(R.id.textAppVersion)
         textUpdateStatus = findViewById(R.id.textUpdateStatus)
         buttonCheckUpdate = findViewById(R.id.buttonCheckUpdate)
+        gridHeatmap = findViewById(R.id.gridHeatmap)
         editCatatan = findViewById(R.id.editCatatan)
         lineChartProgress = findViewById(R.id.lineChartProgress)
     }
@@ -227,7 +236,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupChart() {
         lineChartProgress.description.isEnabled = false
         lineChartProgress.setTouchEnabled(true)
-        lineChartProgress.setPinchZoom(true)
+        lineChartProgress.setPinchZoom(false)
+        lineChartProgress.setScaleEnabled(false)
         lineChartProgress.legend.isEnabled = true
 
         lineChartProgress.axisRight.isEnabled = false
@@ -237,10 +247,51 @@ class MainActivity : AppCompatActivity() {
         lineChartProgress.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
 
         lineChartProgress.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        lineChartProgress.xAxis.axisMinimum = 1f
-        lineChartProgress.xAxis.axisMaximum = 30f
+        lineChartProgress.xAxis.axisMinimum = 0f
+        lineChartProgress.xAxis.axisMaximum = 29f
         lineChartProgress.xAxis.granularity = 1f
-        lineChartProgress.xAxis.setLabelCount(10, false)
+        lineChartProgress.xAxis.isGranularityEnabled = true
+        lineChartProgress.xAxis.setLabelCount(30, false)
+        lineChartProgress.xAxis.textSize = 8f
+        lineChartProgress.xAxis.labelRotationAngle = -60f
+        lineChartProgress.xAxis.setAvoidFirstLastClipping(false)
+        lineChartProgress.xAxis.valueFormatter = object : ValueFormatter() {
+            override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+                val index = value.roundToInt()
+                return if (index in 0..29 && abs(value - index.toFloat()) <= 0.51f) {
+                    (index + 1).toString()
+                } else {
+                    ""
+                }
+            }
+        }
+    }
+
+    private fun setupHeatmap() {
+        gridHeatmap.removeAllViews()
+        heatmapCells.clear()
+
+        val density = resources.displayMetrics.density
+        val cellSize = (44 * density).toInt()
+        val margin = (4 * density).toInt()
+
+        for (day in 1..30) {
+            val cell = TextView(this).apply {
+                text = day.toString()
+                gravity = android.view.Gravity.CENTER
+                textSize = 12f
+                setTextColor(Color.parseColor("#1A3C34"))
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = cellSize
+                    height = cellSize
+                    setMargins(margin, margin, margin, margin)
+                }
+                setPadding(4, 4, 4, 4)
+            }
+            heatmapCells.add(cell)
+            gridHeatmap.addView(cell)
+        }
+        updateHeatmap()
     }
 
     private fun setupDaySpinner() {
@@ -370,6 +421,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateMonthlyChart()
+        updateHeatmap()
     }
 
     private fun getPerfectStreakUntil(day: Int): Int {
@@ -440,6 +492,39 @@ class MainActivity : AppCompatActivity() {
         toneGenerator.release()
     }
 
+    private fun updateHeatmap() {
+        if (heatmapCells.isEmpty()) return
+
+        for (day in 1..30) {
+            val cell = heatmapCells[day - 1]
+            val score = calculateDayScore(day)
+            val bgColor = when {
+                score >= 100 -> Color.parseColor("#2E7D32")
+                score >= 80 -> Color.parseColor("#66BB6A")
+                score >= 60 -> Color.parseColor("#A5D6A7")
+                score >= 40 -> Color.parseColor("#FFE082")
+                score >= 20 -> Color.parseColor("#FFCC80")
+                else -> Color.parseColor("#F5E9E2")
+            }
+            cell.setBackgroundColor(bgColor)
+            cell.setTextColor(if (score >= 80) Color.WHITE else Color.parseColor("#1A3C34"))
+            cell.contentDescription = "Hari $day skor $score"
+        }
+    }
+
+    private fun calculateDayScore(day: Int): Int {
+        val sholatDone = listOf(
+            prefs.getBoolean(key(day, "subuh"), false),
+            prefs.getBoolean(key(day, "dzuhur"), false),
+            prefs.getBoolean(key(day, "ashar"), false),
+            prefs.getBoolean(key(day, "maghrib"), false),
+            prefs.getBoolean(key(day, "isya"), false)
+        ).count { it }
+        val puasaDone = prefs.getString(key(day, "puasa"), "") == "puasa"
+        val completedItems = sholatDone + if (puasaDone) 1 else 0
+        return (completedItems * 100) / 6
+    }
+
     private fun updateMonthlyChart() {
         val sholatEntries = mutableListOf<Entry>()
         val puasaEntries = mutableListOf<Entry>()
@@ -456,8 +541,9 @@ class MainActivity : AppCompatActivity() {
             val sholatScore = (sholatCount * 100f) / 5f
             val puasaScore = if (prefs.getString(key(day, "puasa"), "") == "puasa") 100f else 0f
 
-            sholatEntries.add(Entry(day.toFloat(), sholatScore))
-            puasaEntries.add(Entry(day.toFloat(), puasaScore))
+            val x = (day - 1).toFloat()
+            sholatEntries.add(Entry(x, sholatScore))
+            puasaEntries.add(Entry(x, puasaScore))
         }
 
         val sholatSet = LineDataSet(sholatEntries, getString(R.string.legend_sholat)).apply {
@@ -558,3 +644,5 @@ class MainActivity : AppCompatActivity() {
 
     private val prayerTimesByDay = mutableListOf<PrayerTimes>()
 }
+
+
