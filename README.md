@@ -66,6 +66,14 @@ Unduh file APK terbaru melalui halaman rilis berikut:
 
 https://github.com/ryanbekabe/Giat-Ramadhan/releases
 
+## Screenshot Aplikasi
+
+![Screenshot 1](Screenshot%202026-02-17%20112816.png)
+![Screenshot 2](Screenshot%202026-02-17%20112846.png)
+![Screenshot 3](Screenshot%202026-02-17%20112926.png)
+![Screenshot 4](Screenshot%202026-02-17%20112959.png)
+![Screenshot 5](Screenshot%202026-02-17%20113037.png)
+
 ## Donasi Pengembangan
 
 Jika ingin mendukung pengembangan aplikasi ini, Anda dapat melakukan donasi melalui transfer QRIS dengan scan gambar berikut:
