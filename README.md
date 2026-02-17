@@ -54,6 +54,12 @@ Data aktivitas harian disimpan lokal menggunakan `SharedPreferences`, meliputi:
 - DownloadManager (fitur update APK)
 - HttpURLConnection + ConnectivityManager (fitur statistik startup)
 
+## Download APK
+
+Unduh file APK terbaru melalui halaman rilis berikut:
+
+https://github.com/ryanbekabe/Giat-Ramadhan/releases
+
 ## Donasi Pengembangan
 
 Jika ingin mendukung pengembangan aplikasi ini, Anda dapat melakukan donasi melalui transfer QRIS dengan scan gambar berikut:
