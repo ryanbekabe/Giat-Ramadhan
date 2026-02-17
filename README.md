@@ -12,19 +12,22 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
 - Tanggal Ramadhan dilengkapi hari dan tanggal Masehi.
 - Checklist Sholat 5 waktu + Tarawih dan Witir: Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir.
 - Status puasa harian: `Puasa` atau `Tidak Puasa`.
-- Skor harian otomatis (0-100): 5 sholat + Tarawih Witir + puasa bernilai penuh 100.
+- Skor harian otomatis (0-100): 7 sholat (Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir) + puasa + tadarus checklist bernilai penuh 100.
 - Ringkasan progres harian langsung di layar utama.
 - Grafik kinerja Ramadhan (line chart) dengan sumbu hari lengkap `1-30`:
   - Garis hijau: progres sholat per hari.
   - Garis oranye: progres puasa per hari.
+  - Garis biru: progres tadarus per hari.
 - Heatmap 30 hari untuk melihat performa ibadah bulanan secara cepat.
 - Badge/Achievement berdasarkan streak hari sempurna:
+  - Hari sempurna: semua checklist sholat + puasa + tadarus tercapai.
   - Pemula Konsisten (3 hari)
   - Terlatih (7 hari)
   - Hebat (14 hari)
   - Juara Ramadhan (30 hari)
 - Animasi ringan + efek suara saat badge naik level.
 - Catatan tadarus/mengaji per hari.
+- Checklist tadarus/mengaji selesai per hari.
 - Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) yang dibaca dari file CSV di `assets`, dengan sumber dari https://bimasislam.kemenag.go.id/jadwalshalat dan pemilihan WIB Kota Palangka Raya.
 - Tombol `About` menampilkan:
   - Info aplikasi: `Apk MU version [versi] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026`
@@ -32,7 +35,7 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
 - Tombol `Masukan & Saran`:
   - Pengguna dapat mengirim pesan masukan/saran dari dialog input.
   - Pesan dikirim ke `https://hanyajasa.com/?MasukanSaranGiatRamadhan=...`
-- Informasi versi aplikasi saat ini: `20260218`.
+- Informasi versi aplikasi saat ini: `20260217`.
 - Tombol `Cek Update`:
   - Cek versi online dari `https://hanyajasa.com/apk/giatramadhan/versi.txt`
   - Jika versi lebih baru, unduh APK dari `https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk`
@@ -46,6 +49,7 @@ Data aktivitas harian disimpan lokal menggunakan `SharedPreferences`, meliputi:
 
 - Checklist sholat per hari
 - Status puasa per hari
+- Checklist tadarus per hari
 - Catatan tadarus per hari
 - Data ringkasan yang dihitung dari aktivitas harian
 
