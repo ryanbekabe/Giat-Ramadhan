@@ -2,6 +2,10 @@
 
 Aplikasi Android untuk membantu anak sekolah menjalani kegiatan Ramadhan 1447 H dengan cara yang menyenangkan, terstruktur, dan mudah dipantau setiap hari.
 
+## Lisensi
+
+Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` untuk teks lisensi lengkap.
+
 ## Sekilas Fitur
 
 - Checklist harian 1-30 Ramadhan.
@@ -21,9 +25,9 @@ Aplikasi Android untuk membantu anak sekolah menjalani kegiatan Ramadhan 1447 H 
   - Juara Ramadhan (30 hari)
 - Animasi ringan + efek suara saat badge naik level.
 - Catatan tadarus/mengaji per hari.
-- Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) yang dibaca dari file CSV di `assets`.
+- Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) yang dibaca dari file CSV di `assets`, dengan sumber dari https://bimasislam.kemenag.go.id/jadwalshalat dan pemilihan WIB Kota Palangka Raya.
 - Tombol `About` menampilkan:
-  - Info aplikasi: `About: Apk MU version [versi] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026`
+  - Info aplikasi: `Apk MU version [versi] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026`
   - QRIS donasi + daftar rekening donasi.
 - Tombol `Masukan & Saran`:
   - Pengguna dapat mengirim pesan masukan/saran dari dialog input.

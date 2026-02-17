@@ -64,6 +64,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var checkAshar: CheckBox
     private lateinit var checkMaghrib: CheckBox
     private lateinit var checkIsya: CheckBox
+    private lateinit var checkTarawih: CheckBox
+    private lateinit var checkWitir: CheckBox
+    private lateinit var checkTadarus: CheckBox
     private lateinit var groupPuasa: RadioGroup
     private lateinit var radioPuasa: RadioButton
     private lateinit var radioTidakPuasa: RadioButton
@@ -145,6 +148,9 @@ class MainActivity : AppCompatActivity() {
         checkAshar = findViewById(R.id.checkAshar)
         checkMaghrib = findViewById(R.id.checkMaghrib)
         checkIsya = findViewById(R.id.checkIsya)
+        checkTarawih = findViewById(R.id.checkTarawih)
+        checkWitir = findViewById(R.id.checkWitir)
+        checkTadarus = findViewById(R.id.checkTadarus)
         groupPuasa = findViewById(R.id.groupPuasa)
         radioPuasa = findViewById(R.id.radioPuasa)
         radioTidakPuasa = findViewById(R.id.radioTidakPuasa)
@@ -469,9 +475,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        val sholatChecks = listOf(checkSubuh, checkDzuhur, checkAshar, checkMaghrib, checkIsya)
+        val sholatChecks = listOf(
+            checkSubuh,
+            checkDzuhur,
+            checkAshar,
+            checkMaghrib,
+            checkIsya,
+            checkTarawih,
+            checkWitir
+        )
+        val ibadahChecks = sholatChecks + checkTadarus
 
-        sholatChecks.forEach { checkBox ->
+        ibadahChecks.forEach { checkBox ->
             checkBox.setOnCheckedChangeListener { _, _ ->
                 if (isUpdatingUi) return@setOnCheckedChangeListener
                 val previousBadgeTier = getBadgeTierByStreak(getPerfectStreakUntil(selectedDay))
@@ -506,6 +521,9 @@ class MainActivity : AppCompatActivity() {
         checkAshar.isChecked = prefs.getBoolean(key(day, "ashar"), false)
         checkMaghrib.isChecked = prefs.getBoolean(key(day, "maghrib"), false)
         checkIsya.isChecked = prefs.getBoolean(key(day, "isya"), false)
+        checkTarawih.isChecked = prefs.getBoolean(key(day, "tarawih"), false)
+        checkWitir.isChecked = prefs.getBoolean(key(day, "witir"), false)
+        checkTadarus.isChecked = prefs.getBoolean(key(day, "tadarus"), false)
 
         when (prefs.getString(key(day, "puasa"), "")) {
             "puasa" -> groupPuasa.check(radioPuasa.id)
@@ -532,6 +550,9 @@ class MainActivity : AppCompatActivity() {
             .putBoolean(key(selectedDay, "ashar"), checkAshar.isChecked)
             .putBoolean(key(selectedDay, "maghrib"), checkMaghrib.isChecked)
             .putBoolean(key(selectedDay, "isya"), checkIsya.isChecked)
+            .putBoolean(key(selectedDay, "tarawih"), checkTarawih.isChecked)
+            .putBoolean(key(selectedDay, "witir"), checkWitir.isChecked)
+            .putBoolean(key(selectedDay, "tadarus"), checkTadarus.isChecked)
             .putString(key(selectedDay, "puasa"), puasaValue)
             .putString(key(selectedDay, "catatan"), editCatatan.text?.toString()?.trim().orEmpty())
             .apply()
@@ -543,24 +564,32 @@ class MainActivity : AppCompatActivity() {
             checkDzuhur.isChecked,
             checkAshar.isChecked,
             checkMaghrib.isChecked,
-            checkIsya.isChecked
+            checkIsya.isChecked,
+            checkTarawih.isChecked,
+            checkWitir.isChecked
         ).count { it }
 
         val puasaDone = groupPuasa.checkedRadioButtonId == radioPuasa.id
+        val tadarusDone = checkTadarus.isChecked
 
         val puasaText = when (groupPuasa.checkedRadioButtonId) {
             radioPuasa.id -> getString(R.string.status_puasa)
             radioTidakPuasa.id -> getString(R.string.status_tidak_puasa)
             else -> getString(R.string.status_belum)
         }
+        val tadarusText = if (tadarusDone) {
+            getString(R.string.status_tadarus_done)
+        } else {
+            getString(R.string.status_tadarus_not_done)
+        }
 
-        val completedItems = sholatDone + if (puasaDone) 1 else 0
-        val score = (completedItems * 100) / 6
+        val completedItems = sholatDone + (if (puasaDone) 1 else 0) + (if (tadarusDone) 1 else 0)
+        val score = (completedItems * 100) / 9
         val streak = getPerfectStreakUntil(selectedDay)
         val currentBadgeTier = getBadgeTierByStreak(streak)
         val badge = getBadgeByStreak(streak)
 
-        textSummary.text = getString(R.string.summary_format, sholatDone, puasaText)
+        textSummary.text = getString(R.string.summary_format_with_tadarus, sholatDone, puasaText, tadarusText)
         textScore.text = getString(R.string.score_format, score)
         textAchievement.text = getString(R.string.achievement_format, badge)
         textStreak.text = getString(R.string.streak_format, streak)
@@ -591,11 +620,14 @@ class MainActivity : AppCompatActivity() {
             prefs.getBoolean(key(day, "dzuhur"), false),
             prefs.getBoolean(key(day, "ashar"), false),
             prefs.getBoolean(key(day, "maghrib"), false),
-            prefs.getBoolean(key(day, "isya"), false)
+            prefs.getBoolean(key(day, "isya"), false),
+            prefs.getBoolean(key(day, "tarawih"), false),
+            prefs.getBoolean(key(day, "witir"), false)
         ).all { it }
 
         val puasaDone = prefs.getString(key(day, "puasa"), "") == "puasa"
-        return allSholatDone && puasaDone
+        val tadarusDone = prefs.getBoolean(key(day, "tadarus"), false)
+        return allSholatDone && puasaDone && tadarusDone
     }
 
     private fun getBadgeByStreak(streak: Int): String {
@@ -668,16 +700,20 @@ class MainActivity : AppCompatActivity() {
             prefs.getBoolean(key(day, "dzuhur"), false),
             prefs.getBoolean(key(day, "ashar"), false),
             prefs.getBoolean(key(day, "maghrib"), false),
-            prefs.getBoolean(key(day, "isya"), false)
+            prefs.getBoolean(key(day, "isya"), false),
+            prefs.getBoolean(key(day, "tarawih"), false),
+            prefs.getBoolean(key(day, "witir"), false)
         ).count { it }
         val puasaDone = prefs.getString(key(day, "puasa"), "") == "puasa"
-        val completedItems = sholatDone + if (puasaDone) 1 else 0
-        return (completedItems * 100) / 6
+        val tadarusDone = prefs.getBoolean(key(day, "tadarus"), false)
+        val completedItems = sholatDone + (if (puasaDone) 1 else 0) + (if (tadarusDone) 1 else 0)
+        return (completedItems * 100) / 9
     }
 
     private fun updateMonthlyChart() {
         val sholatEntries = mutableListOf<Entry>()
         val puasaEntries = mutableListOf<Entry>()
+        val tadarusEntries = mutableListOf<Entry>()
 
         for (day in 1..30) {
             val sholatCount = listOf(
@@ -685,15 +721,19 @@ class MainActivity : AppCompatActivity() {
                 prefs.getBoolean(key(day, "dzuhur"), false),
                 prefs.getBoolean(key(day, "ashar"), false),
                 prefs.getBoolean(key(day, "maghrib"), false),
-                prefs.getBoolean(key(day, "isya"), false)
+                prefs.getBoolean(key(day, "isya"), false),
+                prefs.getBoolean(key(day, "tarawih"), false),
+                prefs.getBoolean(key(day, "witir"), false)
             ).count { it }
 
-            val sholatScore = (sholatCount * 100f) / 5f
+            val sholatScore = (sholatCount * 100f) / 7f
             val puasaScore = if (prefs.getString(key(day, "puasa"), "") == "puasa") 100f else 0f
+            val tadarusScore = if (prefs.getBoolean(key(day, "tadarus"), false)) 100f else 0f
 
             val x = (day - 1).toFloat()
             sholatEntries.add(Entry(x, sholatScore))
             puasaEntries.add(Entry(x, puasaScore))
+            tadarusEntries.add(Entry(x, tadarusScore))
         }
 
         val sholatSet = LineDataSet(sholatEntries, getString(R.string.legend_sholat)).apply {
@@ -714,7 +754,16 @@ class MainActivity : AppCompatActivity() {
             mode = LineDataSet.Mode.LINEAR
         }
 
-        lineChartProgress.data = LineData(sholatSet, puasaSet)
+        val tadarusSet = LineDataSet(tadarusEntries, getString(R.string.legend_tadarus)).apply {
+            color = Color.parseColor("#1565C0")
+            setCircleColor(Color.parseColor("#1565C0"))
+            lineWidth = 2.5f
+            circleRadius = 3f
+            setDrawValues(false)
+            mode = LineDataSet.Mode.LINEAR
+        }
+
+        lineChartProgress.data = LineData(sholatSet, puasaSet, tadarusSet)
         lineChartProgress.invalidate()
     }
 
@@ -841,4 +890,3 @@ class MainActivity : AppCompatActivity() {
 
     private val prayerTimesByDay = mutableListOf<PrayerTimes>()
 }
-

@@ -126,31 +126,50 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/subuh" />
+                    android:text="@string/subuh"
+                    android:textColor="@color/text_primary" />
 
                 <CheckBox
                     android:id="@+id/checkDzuhur"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/dzuhur" />
+                    android:text="@string/dzuhur"
+                    android:textColor="@color/text_primary" />
 
                 <CheckBox
                     android:id="@+id/checkAshar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/ashar" />
+                    android:text="@string/ashar"
+                    android:textColor="@color/text_primary" />
 
                 <CheckBox
                     android:id="@+id/checkMaghrib"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/maghrib" />
+                    android:text="@string/maghrib"
+                    android:textColor="@color/text_primary" />
 
                 <CheckBox
                     android:id="@+id/checkIsya"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/isya" />
+                    android:text="@string/isya"
+                    android:textColor="@color/text_primary" />
+
+                <CheckBox
+                    android:id="@+id/checkTarawih"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tarawih"
+                    android:textColor="@color/text_primary" />
+
+                <CheckBox
+                    android:id="@+id/checkWitir"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/witir"
+                    android:textColor="@color/text_primary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -243,7 +262,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:hint="@string/hint_catatan">
+                    android:hint="@string/hint_catatan"
+                    app:hintTextColor="@color/text_secondary">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/editCatatan"
@@ -251,9 +271,19 @@
                         android:layout_height="wrap_content"
                         android:gravity="top|start"
                         android:inputType="textCapSentences|textMultiLine"
+                        android:textColorHint="@color/text_secondary"
+                        android:textColor="@color/text_primary"
                         android:minLines="3"
                         android:maxLines="5" />
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <CheckBox
+                    android:id="@+id/checkTadarus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/label_tadarus_check"
+                    android:textColor="@color/text_primary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -291,13 +321,15 @@
                         android:id="@+id/radioPuasa"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/puasa" />
+                        android:text="@string/puasa"
+                        android:textColor="@color/text_primary" />
 
                     <RadioButton
                         android:id="@+id/radioTidakPuasa"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/tidak_puasa" />
+                        android:text="@string/tidak_puasa"
+                        android:textColor="@color/text_primary" />
                 </RadioGroup>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
