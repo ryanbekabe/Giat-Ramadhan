@@ -59,6 +59,17 @@ Data aktivitas harian disimpan lokal menggunakan `SharedPreferences`, meliputi:
 Jika ingin mendukung pengembangan aplikasi ini, Anda dapat melakukan donasi melalui transfer QRIS dengan scan gambar berikut:
 
 ![QRIS Donasi](6170174619466271873.jpg)
+```
+BSI     :  9692999170
+BCA     : 8600432053
+BRI     : 4543-01-020754-53-0
+Mandiri : 159-00-0068323-4
+Muamalat : 6310042068
+Dana : 082254205110
+Jenius : 90110062490
+Jago : 101396991206
+Seabank : 901899706783
+```
 
 ## About
 

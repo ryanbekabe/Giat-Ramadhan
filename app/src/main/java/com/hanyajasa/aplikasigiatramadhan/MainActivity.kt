@@ -24,8 +24,11 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
@@ -75,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textIsyaTime: TextView
     private lateinit var textAppVersion: TextView
     private lateinit var textUpdateStatus: TextView
+    private lateinit var buttonAbout: Button
     private lateinit var buttonCheckUpdate: Button
     private lateinit var gridHeatmap: GridLayout
     private lateinit var editCatatan: TextInputEditText
@@ -154,6 +158,7 @@ class MainActivity : AppCompatActivity() {
         textIsyaTime = findViewById(R.id.textIsyaTime)
         textAppVersion = findViewById(R.id.textAppVersion)
         textUpdateStatus = findViewById(R.id.textUpdateStatus)
+        buttonAbout = findViewById(R.id.buttonAbout)
         buttonCheckUpdate = findViewById(R.id.buttonCheckUpdate)
         gridHeatmap = findViewById(R.id.gridHeatmap)
         editCatatan = findViewById(R.id.editCatatan)
@@ -163,9 +168,78 @@ class MainActivity : AppCompatActivity() {
     private fun setupUpdateUi() {
         textAppVersion.text = getString(R.string.app_version_label, CURRENT_VERSION.toString())
         textUpdateStatus.text = getString(R.string.update_status_idle)
+        buttonAbout.setOnClickListener {
+            showAboutDialog()
+        }
         buttonCheckUpdate.setOnClickListener {
             checkForUpdates()
         }
+    }
+
+    private fun showAboutDialog() {
+        val density = resources.displayMetrics.density
+        val padding = (16 * density).toInt()
+        val marginTop = (12 * density).toInt()
+
+        val container = ScrollView(this)
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, padding)
+        }
+
+        val aboutText = TextView(this).apply {
+            text = getString(R.string.about_dialog_message, CURRENT_VERSION.toString())
+            setTextColor(Color.parseColor("#1A3C34"))
+            textSize = 14f
+        }
+
+        val donationTitle = TextView(this).apply {
+            text = getString(R.string.donasi_title)
+            setTextColor(Color.parseColor("#1A3C34"))
+            textSize = 13f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = marginTop
+            }
+        }
+
+        val qrisImage = ImageView(this).apply {
+            setImageResource(R.drawable.qris_donasi)
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = marginTop
+            }
+        }
+
+        val donationAccounts = TextView(this).apply {
+            text = getString(R.string.donasi_rekening)
+            setTextColor(Color.parseColor("#2F5249"))
+            textSize = 13f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = marginTop
+            }
+        }
+
+        content.addView(aboutText)
+        content.addView(donationTitle)
+        content.addView(qrisImage)
+        content.addView(donationAccounts)
+        container.addView(content)
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.about_dialog_title))
+            .setView(container)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun checkForUpdates() {
