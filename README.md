@@ -8,13 +8,12 @@ Aplikasi Android untuk membantu anak sekolah menjalani kegiatan Ramadhan 1447 H 
 - Tanggal Ramadhan dilengkapi hari dan tanggal Masehi.
 - Checklist Sholat 5 waktu: Subuh, Dzuhur, Ashar, Maghrib, Isya.
 - Status puasa harian: `Puasa` atau `Tidak Puasa`.
-- Skor harian otomatis (0-100):
-  - 5 sholat + puasa bernilai penuh 100.
-  - `Tidak Puasa` tidak menambah nilai puasa.
+- Skor harian otomatis (0-100): 5 sholat + puasa bernilai penuh 100.
 - Ringkasan progres harian langsung di layar utama.
-- Grafik kinerja Ramadhan (line chart):
+- Grafik kinerja Ramadhan (line chart) dengan sumbu hari lengkap `1-30`:
   - Garis hijau: progres sholat per hari.
   - Garis oranye: progres puasa per hari.
+- Heatmap 30 hari untuk melihat performa ibadah bulanan secara cepat.
 - Badge/Achievement berdasarkan streak hari sempurna:
   - Pemula Konsisten (3 hari)
   - Terlatih (7 hari)
@@ -23,10 +22,13 @@ Aplikasi Android untuk membantu anak sekolah menjalani kegiatan Ramadhan 1447 H 
 - Animasi ringan + efek suara saat badge naik level.
 - Catatan tadarus/mengaji per hari.
 - Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) yang dibaca dari file CSV di `assets`.
-- Informasi versi aplikasi saat ini: `20260217`.
+- Informasi versi aplikasi saat ini: `20260218`.
 - Tombol `Cek Update`:
   - Cek versi online dari `https://hanyajasa.com/apk/giatramadhan/versi.txt`
   - Jika versi lebih baru, unduh APK dari `https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk`
+- Statistik startup otomatis:
+  - Setelah aplikasi berjalan 5 detik dan internet aktif, aplikasi mengirim statistik perangkat Android dan versi aplikasi ke:
+  - `https://hanyajasa.com/?StatistikGiatRamadhan=...`
 
 ## Penyimpanan Data
 
@@ -50,6 +52,13 @@ Data aktivitas harian disimpan lokal menggunakan `SharedPreferences`, meliputi:
 - MPAndroidChart
 - SharedPreferences
 - DownloadManager (fitur update APK)
+- HttpURLConnection + ConnectivityManager (fitur statistik startup)
+
+## Donasi Pengembangan
+
+Jika ingin mendukung pengembangan aplikasi ini, Anda dapat melakukan donasi melalui transfer QRIS dengan scan gambar berikut:
+
+![QRIS Donasi](6170174619466271873.jpg)
 
 ## About
 

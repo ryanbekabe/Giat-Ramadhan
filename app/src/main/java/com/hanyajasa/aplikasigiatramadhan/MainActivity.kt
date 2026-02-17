@@ -13,8 +13,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.text.Editable
 import android.text.TextWatcher
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
@@ -37,11 +42,13 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import java.net.HttpURLConnection
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import java.net.URLEncoder
 import java.net.URL
 
 class MainActivity : AppCompatActivity() {
@@ -78,7 +85,9 @@ class MainActivity : AppCompatActivity() {
     private var isUpdatingUi = false
     private var downloadId: Long = -1L
     private var receiverRegistered = false
+    private var startupStatsScheduled = false
     private val heatmapCells = mutableListOf<TextView>()
+    private val startupHandler = Handler(Looper.getMainLooper())
 
     companion object {
         private const val CURRENT_VERSION = 20260218
@@ -120,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         setupListeners()
         loadDayData(selectedDay)
         registerDownloadReceiver()
+        scheduleStartupStats()
     }
 
     private fun bindViews() {
@@ -484,6 +494,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        startupHandler.removeCallbacksAndMessages(null)
         if (receiverRegistered) {
             unregisterReceiver(downloadReceiver)
             receiverRegistered = false
@@ -632,6 +643,53 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun key(day: Int, field: String): String = "day_${day}_$field"
+
+    private fun scheduleStartupStats() {
+        if (startupStatsScheduled) return
+        startupStatsScheduled = true
+
+        startupHandler.postDelayed({
+            sendStartupStatsIfOnline()
+        }, 5000L)
+    }
+
+    private fun sendStartupStatsIfOnline() {
+        if (!isInternetActive()) return
+
+        Thread {
+            runCatching {
+                val payload = buildStartupStatsPayload()
+                val encodedPayload = URLEncoder.encode(payload, "UTF-8")
+                val endpoint = "https://hanyajasa.com/?StatistikGiatRamadhan=$encodedPayload"
+                val connection = URL(endpoint).openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                connection.instanceFollowRedirects = true
+                connection.inputStream.use { it.readBytes() }
+                connection.disconnect()
+            }
+        }.start()
+    }
+
+    private fun isInternetActive(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    private fun buildStartupStatsPayload(): String {
+        val androidVersion = Build.VERSION.RELEASE ?: "unknown"
+        return "appVersion=$CURRENT_VERSION;" +
+            "brand=${Build.BRAND};" +
+            "manufacturer=${Build.MANUFACTURER};" +
+            "model=${Build.MODEL};" +
+            "device=${Build.DEVICE};" +
+            "product=${Build.PRODUCT};" +
+            "sdk=${Build.VERSION.SDK_INT};" +
+            "android=$androidVersion"
+    }
 
     private data class PrayerTimes(
         val imsak: String,
