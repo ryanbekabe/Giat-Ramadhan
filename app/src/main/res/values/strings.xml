@@ -60,11 +60,13 @@
     <string name="app_version_label">Versi Aplikasi: %1$s</string>
     <string name="check_update">Cek Update</string>
     <string name="update_status_idle">Status update: belum dicek</string>
-    <string name="update_status_checking">Status update: mengecek versi terbaru...</string>
+    <string name="update_status_checking">Status update: mengecek versi terbaru... Jika tidak otomatis mengupdate, biasanya tersimpan di folder Download untuk diinstall secara manual.</string>
     <string name="update_status_latest">Status update: aplikasi sudah versi terbaru</string>
     <string name="update_status_available">Status update: versi terbaru tersedia (%1$s)</string>
     <string name="update_status_downloading">Status update: mengunduh APK terbaru...</string>
     <string name="update_status_downloaded">Status update: unduhan selesai, siap instal</string>
+    <string name="update_status_download_failed">Status update: unduhan gagal</string>
+    <string name="update_status_install_failed">Status update: gagal membuka installer APK</string>
     <string name="update_status_failed">Status update: gagal cek update</string>
     <string name="update_dialog_title">Update Tersedia</string>
     <string name="update_dialog_message">Versi baru tersedia (%1$s). Unduh sekarang?</string>

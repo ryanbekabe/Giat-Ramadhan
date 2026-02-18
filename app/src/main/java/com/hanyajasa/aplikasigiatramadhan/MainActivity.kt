@@ -122,8 +122,7 @@ class MainActivity : AppCompatActivity() {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L)
             if (id != downloadId) return
 
-            textUpdateStatus.text = getString(R.string.update_status_downloaded)
-            installDownloadedApk(id)
+            handleDownloadCompleted(id)
         }
     }
 
@@ -335,7 +334,14 @@ class MainActivity : AppCompatActivity() {
         textUpdateStatus.text = getString(R.string.update_status_checking)
         Thread {
             runCatching {
-                URL(VERSION_URL).readText().trim()
+                val connection = URL(VERSION_URL).openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                connection.instanceFollowRedirects = true
+                val response = connection.inputStream.bufferedReader().use { it.readText().trim() }
+                connection.disconnect()
+                response
             }.onSuccess { versionText ->
                 val latest = versionText.toLongOrNull()
                 runOnUiThread {
@@ -385,7 +391,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun installDownloadedApk(downloadedId: Long) {
         val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-        val apkUri = dm.getUriForDownloadedFile(downloadedId) ?: return
+        val apkUri = dm.getUriForDownloadedFile(downloadedId)
+        if (apkUri == null) {
+            textUpdateStatus.text = getString(R.string.update_status_install_failed)
+            return
+        }
 
         val installIntent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(apkUri, "application/vnd.android.package-archive")
@@ -393,6 +403,31 @@ class MainActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         runCatching { startActivity(installIntent) }
+            .onFailure {
+                textUpdateStatus.text = getString(R.string.update_status_install_failed)
+            }
+    }
+
+    private fun handleDownloadCompleted(downloadedId: Long) {
+        val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+        val query = DownloadManager.Query().setFilterById(downloadedId)
+        val cursor = dm.query(query) ?: run {
+            textUpdateStatus.text = getString(R.string.update_status_download_failed)
+            return
+        }
+        cursor.use {
+            if (!it.moveToFirst()) {
+                textUpdateStatus.text = getString(R.string.update_status_download_failed)
+                return
+            }
+            val status = it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                textUpdateStatus.text = getString(R.string.update_status_downloaded)
+                installDownloadedApk(downloadedId)
+                return
+            }
+            textUpdateStatus.text = getString(R.string.update_status_download_failed)
+        }
     }
 
     private fun registerDownloadReceiver() {
