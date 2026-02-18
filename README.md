@@ -10,6 +10,10 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
 
 - Checklist harian 1-30 Ramadhan.
 - Tanggal Ramadhan dilengkapi hari dan tanggal Masehi.
+- Pemilihan sumber kalender saat pertama kali aplikasi dibuka:
+  - Opsi 1: Kalender Muhammadiyah KHGT (Kalender Hijriah Global Tunggal)
+  - Opsi 2: Kalender Kementerian Agama Republik Indonesia
+- Tombol `Ubah Kalender` tersedia untuk mengganti sumber kalender kapan saja.
 - Checklist Sholat 5 waktu + Tarawih dan Witir: Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir.
 - Status puasa harian: `Puasa` atau `Tidak Puasa`.
 - Skor harian otomatis (0-100): 7 sholat (Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir) + puasa + tadarus checklist bernilai penuh 100.
@@ -28,14 +32,14 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
 - Animasi ringan + efek suara saat badge naik level.
 - Catatan tadarus/mengaji per hari.
 - Checklist tadarus/mengaji selesai per hari.
-- Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) yang dibaca dari file CSV di `assets`, dengan sumber dari https://bimasislam.kemenag.go.id/jadwalshalat dan pemilihan WIB Kota Palangka Raya.
+- Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) dibaca dari file CSV di `assets` sesuai pilihan kalender.
 - Tombol `About` menampilkan:
-  - Info aplikasi: `Apk MU version [versi] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026`
+  - Info aplikasi: `Bisa pilih KHGT/Kemenag version [Zona waktu WIB Kota Palangka Raya] by hanyajasa.com - hanyajasa@gmail.com - Palangka Raya 2026`
   - QRIS donasi + daftar rekening donasi.
 - Tombol `Masukan & Saran`:
   - Pengguna dapat mengirim pesan masukan/saran dari dialog input.
   - Pesan dikirim ke `https://hanyajasa.com/?MasukanSaranGiatRamadhan=...`
-- Informasi versi aplikasi saat ini: `20260217`.
+- Informasi versi aplikasi saat ini: `20260218`.
 - Tombol `Cek Update`:
   - Cek versi online dari `https://hanyajasa.com/apk/giatramadhan/versi.txt`
   - Jika versi lebih baru, unduh APK dari `https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk`
@@ -51,11 +55,17 @@ Data aktivitas harian disimpan lokal menggunakan `SharedPreferences`, meliputi:
 - Status puasa per hari
 - Checklist tadarus per hari
 - Catatan tadarus per hari
+- Pilihan sumber kalender (`khgt` atau `kemenag`)
 - Data ringkasan yang dihitung dari aktivitas harian
 
 ## Struktur Data Jadwal Sholat
 
-- File sumber: `app/src/main/assets/Ramadhan1447H.csv`
+- Opsi KHGT:
+  - File: `app/src/main/assets/Ramadhan1447H.csv`
+  - Awal 1 Ramadhan: Rabu, `18/02/2026`
+- Opsi Kemenag:
+  - File: `app/src/main/assets/Ramadhan1447H_Versi_Kemenag.csv`
+  - Awal 1 Ramadhan: Kamis, `19/02/2026`
 - Keunggulan: jadwal bisa diperbarui cukup dengan mengganti file CSV tanpa edit kode Kotlin.
 
 ## Teknologi

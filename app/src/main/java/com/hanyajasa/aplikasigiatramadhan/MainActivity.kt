@@ -68,8 +68,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var checkWitir: CheckBox
     private lateinit var checkTadarus: CheckBox
     private lateinit var groupPuasa: RadioGroup
+    private lateinit var groupAlasanTidakPuasa: RadioGroup
     private lateinit var radioPuasa: RadioButton
     private lateinit var radioTidakPuasa: RadioButton
+    private lateinit var radioAlasanSakit: RadioButton
+    private lateinit var radioAlasanSafar: RadioButton
+    private lateinit var radioAlasanHaid: RadioButton
     private lateinit var textSummary: TextView
     private lateinit var textScore: TextView
     private lateinit var textAchievement: TextView
@@ -85,6 +89,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var buttonAbout: Button
     private lateinit var buttonMasukanSaran: Button
     private lateinit var buttonCheckUpdate: Button
+    private lateinit var buttonChangeCalendar: Button
     private lateinit var gridHeatmap: GridLayout
     private lateinit var editCatatan: TextInputEditText
     private lateinit var lineChartProgress: LineChart
@@ -99,9 +104,16 @@ class MainActivity : AppCompatActivity() {
     private val startupHandler = Handler(Looper.getMainLooper())
 
     companion object {
-        private const val CURRENT_VERSION = 20260217
+        private const val CURRENT_VERSION = 20260218
         private const val VERSION_URL = "https://hanyajasa.com/apk/giatramadhan/versi.txt"
         private const val APK_URL = "https://hanyajasa.com/apk/giatramadhan/giatramadhan.apk"
+        private const val PREF_CALENDAR_MODE = "calendar_mode"
+        private const val CALENDAR_MODE_KHGT = "khgt"
+        private const val CALENDAR_MODE_KEMENAG = "kemenag"
+        private const val CALENDAR_ASSET_KHGT = "Ramadhan1447H.csv"
+        private const val CALENDAR_ASSET_KEMENAG = "Ramadhan1447H_Versi_Kemenag.csv"
+        private val START_DATE_KHGT: LocalDate = LocalDate.of(2026, 2, 18)
+        private val START_DATE_KEMENAG: LocalDate = LocalDate.of(2026, 2, 19)
     }
 
     private val downloadReceiver = object : BroadcastReceiver() {
@@ -128,16 +140,14 @@ class MainActivity : AppCompatActivity() {
 
         prefs = getSharedPreferences("giat_ramadhan", MODE_PRIVATE)
         toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
-        loadPrayerTimesFromCsv()
 
         bindViews()
         setupUpdateUi()
         setupHeatmap()
         setupChart()
-        setupDaySpinner()
         setupListeners()
-        loadDayData(selectedDay)
         registerDownloadReceiver()
+        ensureCalendarSelectionAndLoadData()
         scheduleStartupStats()
     }
 
@@ -152,8 +162,12 @@ class MainActivity : AppCompatActivity() {
         checkWitir = findViewById(R.id.checkWitir)
         checkTadarus = findViewById(R.id.checkTadarus)
         groupPuasa = findViewById(R.id.groupPuasa)
+        groupAlasanTidakPuasa = findViewById(R.id.groupAlasanTidakPuasa)
         radioPuasa = findViewById(R.id.radioPuasa)
         radioTidakPuasa = findViewById(R.id.radioTidakPuasa)
+        radioAlasanSakit = findViewById(R.id.radioAlasanSakit)
+        radioAlasanSafar = findViewById(R.id.radioAlasanSafar)
+        radioAlasanHaid = findViewById(R.id.radioAlasanHaid)
         textSummary = findViewById(R.id.textSummary)
         textScore = findViewById(R.id.textScore)
         textAchievement = findViewById(R.id.textAchievement)
@@ -169,6 +183,7 @@ class MainActivity : AppCompatActivity() {
         buttonAbout = findViewById(R.id.buttonAbout)
         buttonMasukanSaran = findViewById(R.id.buttonMasukanSaran)
         buttonCheckUpdate = findViewById(R.id.buttonCheckUpdate)
+        buttonChangeCalendar = findViewById(R.id.buttonChangeCalendar)
         gridHeatmap = findViewById(R.id.gridHeatmap)
         editCatatan = findViewById(R.id.editCatatan)
         lineChartProgress = findViewById(R.id.lineChartProgress)
@@ -185,6 +200,9 @@ class MainActivity : AppCompatActivity() {
         }
         buttonCheckUpdate.setOnClickListener {
             checkForUpdates()
+        }
+        buttonChangeCalendar.setOnClickListener {
+            showCalendarSelectionDialog(forceChoice = false)
         }
     }
 
@@ -388,6 +406,50 @@ class MainActivity : AppCompatActivity() {
         receiverRegistered = true
     }
 
+    private fun ensureCalendarSelectionAndLoadData() {
+        val savedMode = prefs.getString(PREF_CALENDAR_MODE, null)
+        if (savedMode == null) {
+            showCalendarSelectionDialog(forceChoice = true)
+            return
+        }
+        loadPrayerTimesFromCsv(getCalendarAssetByMode(savedMode))
+        setupDaySpinner(savedMode)
+        loadDayData(selectedDay)
+    }
+
+    private fun showCalendarSelectionDialog(forceChoice: Boolean) {
+        val currentMode = prefs.getString(PREF_CALENDAR_MODE, CALENDAR_MODE_KHGT)
+        val options = arrayOf(
+            getString(R.string.calendar_option_khgt),
+            getString(R.string.calendar_option_kemenag)
+        )
+        var selectedIndex = if (currentMode == CALENDAR_MODE_KEMENAG) 1 else 0
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.calendar_dialog_title))
+            .setCancelable(!forceChoice)
+            .setSingleChoiceItems(options, selectedIndex) { _, which ->
+                selectedIndex = which
+            }
+            .setPositiveButton(getString(R.string.calendar_dialog_use)) { _, _ ->
+                val mode = if (selectedIndex == 0) CALENDAR_MODE_KHGT else CALENDAR_MODE_KEMENAG
+                prefs.edit().putString(PREF_CALENDAR_MODE, mode).apply()
+                loadPrayerTimesFromCsv(getCalendarAssetByMode(mode))
+                setupDaySpinner(mode)
+                loadDayData(selectedDay)
+            }
+            .apply {
+                if (!forceChoice) {
+                    setNegativeButton(android.R.string.cancel, null)
+                }
+            }
+            .show()
+    }
+
+    private fun getCalendarAssetByMode(mode: String): String {
+        return if (mode == CALENDAR_MODE_KEMENAG) CALENDAR_ASSET_KEMENAG else CALENDAR_ASSET_KHGT
+    }
+
     private fun setupChart() {
         lineChartProgress.description.isEnabled = false
         lineChartProgress.setTouchEnabled(true)
@@ -449,8 +511,8 @@ class MainActivity : AppCompatActivity() {
         updateHeatmap()
     }
 
-    private fun setupDaySpinner() {
-        val startDate = LocalDate.of(2026, 2, 18)
+    private fun setupDaySpinner(calendarMode: String) {
+        val startDate = if (calendarMode == CALENDAR_MODE_KEMENAG) START_DATE_KEMENAG else START_DATE_KHGT
         val localeId = Locale.forLanguageTag("id-ID")
         val days = (1..30).map { day ->
             val gregorianDate = startDate.plusDays((day - 1).toLong())
@@ -461,7 +523,8 @@ class MainActivity : AppCompatActivity() {
             "$day Ramadhan - $prettyDayName, ${gregorianDate.dayOfMonth} $prettyMonthName ${gregorianDate.year}"
         }
         spinnerDay.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, days)
-        spinnerDay.setSelection(0)
+        val safeDay = selectedDay.coerceIn(1, 30)
+        spinnerDay.setSelection(safeDay - 1)
         spinnerDay.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
                 selectedDay = position + 1
@@ -497,6 +560,14 @@ class MainActivity : AppCompatActivity() {
 
         groupPuasa.setOnCheckedChangeListener { _, _ ->
             if (isUpdatingUi) return@setOnCheckedChangeListener
+            updateAlasanTidakPuasaVisibility()
+            val previousBadgeTier = getBadgeTierByStreak(getPerfectStreakUntil(selectedDay))
+            saveDayData()
+            updateSummary(previousBadgeTier)
+        }
+
+        groupAlasanTidakPuasa.setOnCheckedChangeListener { _, _ ->
+            if (isUpdatingUi) return@setOnCheckedChangeListener
             val previousBadgeTier = getBadgeTierByStreak(getPerfectStreakUntil(selectedDay))
             saveDayData()
             updateSummary(previousBadgeTier)
@@ -530,6 +601,13 @@ class MainActivity : AppCompatActivity() {
             "tidak" -> groupPuasa.check(radioTidakPuasa.id)
             else -> groupPuasa.clearCheck()
         }
+        when (prefs.getString(key(day, "alasan_tidak_puasa"), "")) {
+            "sakit" -> groupAlasanTidakPuasa.check(radioAlasanSakit.id)
+            "safar" -> groupAlasanTidakPuasa.check(radioAlasanSafar.id)
+            "haid" -> groupAlasanTidakPuasa.check(radioAlasanHaid.id)
+            else -> groupAlasanTidakPuasa.clearCheck()
+        }
+        updateAlasanTidakPuasaVisibility()
         editCatatan.setText(prefs.getString(key(day, "catatan"), ""))
         updatePrayerTimes(day)
 
@@ -543,6 +621,7 @@ class MainActivity : AppCompatActivity() {
             radioTidakPuasa.id -> "tidak"
             else -> ""
         }
+        val alasanTidakPuasa = if (puasaValue == "tidak") getSelectedAlasanTidakPuasa() else ""
 
         prefs.edit()
             .putBoolean(key(selectedDay, "subuh"), checkSubuh.isChecked)
@@ -554,6 +633,7 @@ class MainActivity : AppCompatActivity() {
             .putBoolean(key(selectedDay, "witir"), checkWitir.isChecked)
             .putBoolean(key(selectedDay, "tadarus"), checkTadarus.isChecked)
             .putString(key(selectedDay, "puasa"), puasaValue)
+            .putString(key(selectedDay, "alasan_tidak_puasa"), alasanTidakPuasa)
             .putString(key(selectedDay, "catatan"), editCatatan.text?.toString()?.trim().orEmpty())
             .apply()
     }
@@ -569,12 +649,16 @@ class MainActivity : AppCompatActivity() {
             checkWitir.isChecked
         ).count { it }
 
-        val puasaDone = groupPuasa.checkedRadioButtonId == radioPuasa.id
+        val puasaDone = isPuasaCompletedForCurrentDay()
         val tadarusDone = checkTadarus.isChecked
 
         val puasaText = when (groupPuasa.checkedRadioButtonId) {
             radioPuasa.id -> getString(R.string.status_puasa)
-            radioTidakPuasa.id -> getString(R.string.status_tidak_puasa)
+            radioTidakPuasa.id -> {
+                val alasan = getSelectedAlasanTidakPuasaLabel()
+                if (alasan.isBlank()) getString(R.string.status_tidak_puasa)
+                else getString(R.string.status_tidak_puasa_dengan_alasan, alasan)
+            }
             else -> getString(R.string.status_belum)
         }
         val tadarusText = if (tadarusDone) {
@@ -625,7 +709,7 @@ class MainActivity : AppCompatActivity() {
             prefs.getBoolean(key(day, "witir"), false)
         ).all { it }
 
-        val puasaDone = prefs.getString(key(day, "puasa"), "") == "puasa"
+        val puasaDone = isPuasaCompletedForDay(day)
         val tadarusDone = prefs.getBoolean(key(day, "tadarus"), false)
         return allSholatDone && puasaDone && tadarusDone
     }
@@ -704,7 +788,7 @@ class MainActivity : AppCompatActivity() {
             prefs.getBoolean(key(day, "tarawih"), false),
             prefs.getBoolean(key(day, "witir"), false)
         ).count { it }
-        val puasaDone = prefs.getString(key(day, "puasa"), "") == "puasa"
+        val puasaDone = isPuasaCompletedForDay(day)
         val tadarusDone = prefs.getBoolean(key(day, "tadarus"), false)
         val completedItems = sholatDone + (if (puasaDone) 1 else 0) + (if (tadarusDone) 1 else 0)
         return (completedItems * 100) / 9
@@ -727,7 +811,7 @@ class MainActivity : AppCompatActivity() {
             ).count { it }
 
             val sholatScore = (sholatCount * 100f) / 7f
-            val puasaScore = if (prefs.getString(key(day, "puasa"), "") == "puasa") 100f else 0f
+            val puasaScore = if (isPuasaCompletedForDay(day)) 100f else 0f
             val tadarusScore = if (prefs.getBoolean(key(day, "tadarus"), false)) 100f else 0f
 
             val x = (day - 1).toFloat()
@@ -786,10 +870,10 @@ class MainActivity : AppCompatActivity() {
         textIsyaTime.text = getString(R.string.waktu_template, getString(R.string.label_isya_waktu), times.isya)
     }
 
-    private fun loadPrayerTimesFromCsv() {
+    private fun loadPrayerTimesFromCsv(assetFileName: String) {
         val loaded = mutableListOf<PrayerTimes>()
-        runCatching {
-            assets.open("Ramadhan1447H.csv").bufferedReader().useLines { lines ->
+        val selectedLoadSuccess = runCatching {
+            assets.open(assetFileName).bufferedReader().useLines { lines ->
                 lines.drop(1).forEach { line ->
                     if (line.isBlank()) return@forEach
                     val fields = parseCsvLine(line)
@@ -804,6 +888,29 @@ class MainActivity : AppCompatActivity() {
                             isya = fields[9].trim()
                         )
                     )
+                }
+            }
+            true
+        }.getOrElse { false }
+
+        if (!selectedLoadSuccess && assetFileName != CALENDAR_ASSET_KHGT) {
+            runCatching {
+                assets.open(CALENDAR_ASSET_KHGT).bufferedReader().useLines { lines ->
+                    lines.drop(1).forEach { line ->
+                        if (line.isBlank()) return@forEach
+                        val fields = parseCsvLine(line)
+                        if (fields.size < 10) return@forEach
+                        loaded.add(
+                            PrayerTimes(
+                                imsak = fields[2].trim(),
+                                subuh = fields[3].trim(),
+                                zuhur = fields[6].trim(),
+                                asar = fields[7].trim(),
+                                magrib = fields[8].trim(),
+                                isya = fields[9].trim()
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -831,6 +938,54 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun key(day: Int, field: String): String = "day_${day}_$field"
+
+    private fun getSelectedAlasanTidakPuasa(): String {
+        return when (groupAlasanTidakPuasa.checkedRadioButtonId) {
+            radioAlasanSakit.id -> "sakit"
+            radioAlasanSafar.id -> "safar"
+            radioAlasanHaid.id -> "haid"
+            else -> ""
+        }
+    }
+
+    private fun getSelectedAlasanTidakPuasaLabel(): String {
+        return when (groupAlasanTidakPuasa.checkedRadioButtonId) {
+            radioAlasanSakit.id -> getString(R.string.alasan_sakit)
+            radioAlasanSafar.id -> getString(R.string.alasan_safar)
+            radioAlasanHaid.id -> getString(R.string.alasan_haid)
+            else -> ""
+        }
+    }
+
+    private fun updateAlasanTidakPuasaVisibility() {
+        val visibility = if (groupPuasa.checkedRadioButtonId == radioTidakPuasa.id) {
+            android.view.View.VISIBLE
+        } else {
+            android.view.View.GONE
+        }
+        findViewById<TextView>(R.id.textAlasanTidakPuasa).visibility = visibility
+        groupAlasanTidakPuasa.visibility = visibility
+    }
+
+    private fun isPuasaCompletedForCurrentDay(): Boolean {
+        val puasaValue = when (groupPuasa.checkedRadioButtonId) {
+            radioPuasa.id -> "puasa"
+            radioTidakPuasa.id -> "tidak"
+            else -> ""
+        }
+        val alasan = if (puasaValue == "tidak") getSelectedAlasanTidakPuasa() else ""
+        return isPuasaCompleted(puasaValue, alasan)
+    }
+
+    private fun isPuasaCompletedForDay(day: Int): Boolean {
+        val puasaValue = prefs.getString(key(day, "puasa"), "").orEmpty()
+        val alasan = prefs.getString(key(day, "alasan_tidak_puasa"), "").orEmpty()
+        return isPuasaCompleted(puasaValue, alasan)
+    }
+
+    private fun isPuasaCompleted(puasaValue: String, alasanTidakPuasa: String): Boolean {
+        return puasaValue == "puasa" || (puasaValue == "tidak" && alasanTidakPuasa.isNotBlank())
+    }
 
     private fun scheduleStartupStats() {
         if (startupStatsScheduled) return

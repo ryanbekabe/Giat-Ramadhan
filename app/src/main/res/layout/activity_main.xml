@@ -331,6 +331,46 @@
                         android:text="@string/tidak_puasa"
                         android:textColor="@color/text_primary" />
                 </RadioGroup>
+
+                <TextView
+                    android:id="@+id/textAlasanTidakPuasa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/label_alasan_tidak_puasa"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <RadioGroup
+                    android:id="@+id/groupAlasanTidakPuasa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <RadioButton
+                        android:id="@+id/radioAlasanSakit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alasan_sakit"
+                        android:textColor="@color/text_primary" />
+
+                    <RadioButton
+                        android:id="@+id/radioAlasanSafar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alasan_safar"
+                        android:textColor="@color/text_primary" />
+
+                    <RadioButton
+                        android:id="@+id/radioAlasanHaid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alasan_haid"
+                        android:textColor="@color/text_primary" />
+                </RadioGroup>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -460,10 +500,17 @@
                     android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonCheckUpdate"
+                    android:id="@+id/buttonChangeCalendar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:text="@string/button_change_calendar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonCheckUpdate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:text="@string/check_update" />
 
                 <TextView
