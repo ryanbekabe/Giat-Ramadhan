@@ -96,10 +96,10 @@ https://github.com/ryanbekabe/Giat-Ramadhan/releases
 
 ## Screenshot Aplikasi
 
-![Screenshot 1](Screenshot%2026-02-18%225501.png)
-![Screenshot 2](Screenshot%2026-02-18%225851.png)
-![Screenshot 3](Screenshot%2026-02-18%225936.png)
-![Screenshot 4](Screenshot%2026-02-18%230152.png)
+![Screenshot 1](Screenshot2026-02-18225501.png)
+![Screenshot 2](Screenshot2026-02-18225851.png)
+![Screenshot 3](Screenshot2026-02-18225936.png)
+![Screenshot 4](Screenshot2026-02-18230152.png)
 
 ## Donasi Pengembangan
 
