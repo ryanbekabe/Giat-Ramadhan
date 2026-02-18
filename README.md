@@ -13,10 +13,12 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
 - Pemilihan sumber kalender saat pertama kali aplikasi dibuka:
   - Opsi 1: Kalender Muhammadiyah KHGT (Kalender Hijriah Global Tunggal)
   - Opsi 2: Kalender Kementerian Agama Republik Indonesia
+- Dialog pemilihan sumber kalender telah diperlebar agar teks opsi lebih nyaman dibaca di layar kecil.
 - Tombol `Ubah Kalender` tersedia untuk mengganti sumber kalender kapan saja.
 - Checklist Sholat 5 waktu + Tarawih dan Witir: Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir.
 - Status puasa harian: `Puasa` atau `Tidak Puasa`.
 - Skor harian otomatis (0-100): 7 sholat (Subuh, Dzuhur, Ashar, Maghrib, Isya, Tarawih, Witir) + puasa + tadarus checklist bernilai penuh 100.
+  - `Tidak Puasa` tidak menambah skor puasa.
 - Ringkasan progres harian langsung di layar utama.
 - Grafik kinerja Ramadhan (line chart) dengan sumbu hari lengkap `1-30`:
   - Garis hijau: progres sholat per hari.
@@ -24,12 +26,20 @@ Proyek ini dilisensikan di bawah **Apache License 2.0**. Lihat file `LICENSE` un
   - Garis biru: progres tadarus per hari.
 - Heatmap 30 hari untuk melihat performa ibadah bulanan secara cepat.
 - Badge/Achievement berdasarkan streak hari sempurna:
-  - Hari sempurna: semua checklist sholat + puasa + tadarus tercapai.
+  - Hari sempurna: semua checklist sholat + tadarus tercapai, serta status puasa valid.
+  - `Tidak Puasa` tetap dapat dihitung valid untuk streak jika alasan dipilih (`sakit/safar/haid`).
   - Pemula Konsisten (3 hari)
   - Terlatih (7 hari)
   - Hebat (14 hari)
   - Juara Ramadhan (30 hari)
 - Animasi ringan + efek suara saat badge naik level.
+- Visual badge tambahan di layar utama:
+  - Ikon bintang dan level bintang (`*` sampai `* * * *`) tampil dinamis sesuai tier badge.
+  - Overlay animasi bintang muncul saat skor harian tinggi.
+- Fitur `Bagikan Emblem Pencapaian`:
+  - Membuat file gambar `.png` otomatis dari akumulasi skor, streak terbaik, dan badge.
+  - Bisa dibagikan ke WhatsApp, Instagram, Facebook, dan aplikasi lain via Android share sheet.
+  - Emblem skor tinggi otomatis diberi dekorasi grafis bintang + medali/piala agar lebih menarik.
 - Catatan tadarus/mengaji per hari.
 - Checklist tadarus/mengaji selesai per hari.
 - Jadwal waktu sholat harian (Imsak, Subuh, Zuhur, Asar, Magrib, Isya) dibaca dari file CSV di `assets` sesuai pilihan kalender.

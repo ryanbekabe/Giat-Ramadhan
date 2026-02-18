@@ -7,14 +7,22 @@ import android.media.ToneGenerator
 import android.os.Bundle
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.graphics.LinearGradient
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Shader
+import android.graphics.Path
 import android.text.Editable
 import android.text.TextWatcher
 import android.os.Build
@@ -24,6 +32,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.GridLayout
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
@@ -35,7 +44,9 @@ import android.widget.Toast
 import com.google.android.material.textfield.TextInputEditText
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.mikephil.charting.charts.LineChart
@@ -52,8 +63,12 @@ import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
+import java.io.File
+import java.io.FileOutputStream
 import java.net.URLEncoder
 import java.net.URL
+import kotlin.math.max
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
@@ -77,6 +92,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textSummary: TextView
     private lateinit var textScore: TextView
     private lateinit var textAchievement: TextView
+    private lateinit var textBadgeStars: TextView
     private lateinit var textStreak: TextView
     private lateinit var textImsakTime: TextView
     private lateinit var textSubuhTime: TextView
@@ -88,9 +104,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textUpdateStatus: TextView
     private lateinit var buttonAbout: Button
     private lateinit var buttonMasukanSaran: Button
+    private lateinit var buttonShareEmblem: Button
     private lateinit var buttonCheckUpdate: Button
     private lateinit var buttonChangeCalendar: Button
     private lateinit var gridHeatmap: GridLayout
+    private lateinit var badgeOverlay: FrameLayout
+    private lateinit var imageBadgeIcon: ImageView
     private lateinit var editCatatan: TextInputEditText
     private lateinit var lineChartProgress: LineChart
     private lateinit var toneGenerator: ToneGenerator
@@ -115,6 +134,12 @@ class MainActivity : AppCompatActivity() {
         private val START_DATE_KHGT: LocalDate = LocalDate.of(2026, 2, 18)
         private val START_DATE_KEMENAG: LocalDate = LocalDate.of(2026, 2, 19)
     }
+
+    private data class EmblemStats(
+        val totalScore: Int,
+        val bestStreak: Int,
+        val badgeLabel: String
+    )
 
     private val downloadReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -170,6 +195,7 @@ class MainActivity : AppCompatActivity() {
         textSummary = findViewById(R.id.textSummary)
         textScore = findViewById(R.id.textScore)
         textAchievement = findViewById(R.id.textAchievement)
+        textBadgeStars = findViewById(R.id.textBadgeStars)
         textStreak = findViewById(R.id.textStreak)
         textImsakTime = findViewById(R.id.textImsakTime)
         textSubuhTime = findViewById(R.id.textSubuhTime)
@@ -181,9 +207,12 @@ class MainActivity : AppCompatActivity() {
         textUpdateStatus = findViewById(R.id.textUpdateStatus)
         buttonAbout = findViewById(R.id.buttonAbout)
         buttonMasukanSaran = findViewById(R.id.buttonMasukanSaran)
+        buttonShareEmblem = findViewById(R.id.buttonShareEmblem)
         buttonCheckUpdate = findViewById(R.id.buttonCheckUpdate)
         buttonChangeCalendar = findViewById(R.id.buttonChangeCalendar)
         gridHeatmap = findViewById(R.id.gridHeatmap)
+        badgeOverlay = findViewById(R.id.badgeOverlay)
+        imageBadgeIcon = findViewById(R.id.imageBadgeIcon)
         editCatatan = findViewById(R.id.editCatatan)
         lineChartProgress = findViewById(R.id.lineChartProgress)
     }
@@ -196,6 +225,9 @@ class MainActivity : AppCompatActivity() {
         }
         buttonMasukanSaran.setOnClickListener {
             showMasukanSaranDialog()
+        }
+        buttonShareEmblem.setOnClickListener {
+            shareAchievementEmblem()
         }
         buttonCheckUpdate.setOnClickListener {
             checkForUpdates()
@@ -460,7 +492,7 @@ class MainActivity : AppCompatActivity() {
         )
         var selectedIndex = if (currentMode == CALENDAR_MODE_KEMENAG) 1 else 0
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.calendar_dialog_title))
             .setCancelable(!forceChoice)
             .setSingleChoiceItems(options, selectedIndex) { _, which ->
@@ -478,7 +510,13 @@ class MainActivity : AppCompatActivity() {
                     setNegativeButton(android.R.string.cancel, null)
                 }
             }
-            .show()
+            .create()
+
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun getCalendarAssetByMode(mode: String): String {
@@ -684,7 +722,7 @@ class MainActivity : AppCompatActivity() {
             checkWitir.isChecked
         ).count { it }
 
-        val puasaDone = isPuasaCompletedForCurrentDay()
+        val puasaDone = isPuasaCountedForScoreForCurrentDay()
         val tadarusDone = checkTadarus.isChecked
 
         val puasaText = when (groupPuasa.checkedRadioButtonId) {
@@ -711,14 +749,500 @@ class MainActivity : AppCompatActivity() {
         textSummary.text = getString(R.string.summary_format_with_tadarus, sholatDone, puasaText, tadarusText)
         textScore.text = getString(R.string.score_format, score)
         textAchievement.text = getString(R.string.achievement_format, badge)
+        val isTierUpgrade = previousBadgeTier != null && currentBadgeTier > previousBadgeTier
+        updateBadgeVisual(currentBadgeTier, score, isTierUpgrade)
         textStreak.text = getString(R.string.streak_format, streak)
+        maybeShowHighScoreOverlay(score)
 
-        if (previousBadgeTier != null && currentBadgeTier > previousBadgeTier) {
+        if (isTierUpgrade) {
             animateBadgeUpgrade()
         }
 
         updateMonthlyChart()
         updateHeatmap()
+    }
+
+    private fun updateBadgeVisual(badgeTier: Int, score: Int, isTierUpgrade: Boolean) {
+        val starTextRes = when (badgeTier) {
+            4 -> R.string.badge_star_level_4
+            3 -> R.string.badge_star_level_3
+            2 -> R.string.badge_star_level_2
+            1 -> R.string.badge_star_level_1
+            else -> R.string.badge_star_level_0
+        }
+        textBadgeStars.text = getString(starTextRes)
+
+        val iconRes = if (badgeTier > 0) {
+            android.R.drawable.btn_star_big_on
+        } else {
+            android.R.drawable.btn_star_big_off
+        }
+        imageBadgeIcon.setImageResource(iconRes)
+
+        val tintColor = when (badgeTier) {
+            4 -> Color.parseColor("#F9A825")
+            3 -> Color.parseColor("#FBC02D")
+            2 -> Color.parseColor("#9CCC65")
+            1 -> Color.parseColor("#81C784")
+            else -> Color.parseColor("#90A4AE")
+        }
+        imageBadgeIcon.imageTintList = ColorStateList.valueOf(tintColor)
+
+        val fxKey = key(selectedDay, "badge_icon_fx_shown")
+        val alreadyShown = prefs.getBoolean(fxKey, false)
+        val shouldPulse = isTierUpgrade || (badgeTier > 0 && score >= 80 && !alreadyShown)
+
+        if (shouldPulse) {
+            AnimatorSet().apply {
+                playTogether(
+                    ObjectAnimator.ofFloat(imageBadgeIcon, "scaleX", 1f, 1.18f, 1f),
+                    ObjectAnimator.ofFloat(imageBadgeIcon, "scaleY", 1f, 1.18f, 1f),
+                    ObjectAnimator.ofFloat(imageBadgeIcon, "rotation", 0f, 8f, -8f, 0f)
+                )
+                duration = 520L
+                start()
+            }
+        }
+
+        if (badgeTier > 0 && score >= 80) {
+            if (!alreadyShown) {
+                prefs.edit().putBoolean(fxKey, true).apply()
+            }
+        } else if (alreadyShown) {
+            prefs.edit().putBoolean(fxKey, false).apply()
+        }
+    }
+
+    private fun maybeShowHighScoreOverlay(score: Int) {
+        val fxKey = key(selectedDay, "high_score_fx_shown")
+        val alreadyShown = prefs.getBoolean(fxKey, false)
+        if (score >= 80 && !alreadyShown) {
+            showHighScoreOverlay(score)
+            prefs.edit().putBoolean(fxKey, true).apply()
+            return
+        }
+        if (score < 80 && alreadyShown) {
+            prefs.edit().putBoolean(fxKey, false).apply()
+        }
+    }
+
+    private fun showHighScoreOverlay(score: Int) {
+        badgeOverlay.removeAllViews()
+        val density = resources.displayMetrics.density
+        val overlayWidth = if (badgeOverlay.width > 0) badgeOverlay.width else resources.displayMetrics.widthPixels
+        val overlayHeight = if (badgeOverlay.height > 0) badgeOverlay.height else resources.displayMetrics.heightPixels
+        val centerX = overlayWidth / 2f
+        val centerY = overlayHeight * 0.34f
+
+        val badgeTitle = TextView(this).apply {
+            text = getString(R.string.high_score_overlay_title)
+            setTextColor(Color.parseColor("#FFF7CC"))
+            textSize = 22f
+            setShadowLayer(12f, 0f, 0f, Color.parseColor("#AA000000"))
+            alpha = 0f
+            translationY = 20f * density
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            x = centerX - 140f * density
+            y = centerY - 80f * density
+        }
+        badgeOverlay.addView(badgeTitle)
+
+        val badgeSubtitle = TextView(this).apply {
+            text = getString(R.string.high_score_overlay_subtitle, score)
+            setTextColor(Color.parseColor("#FFFFFF"))
+            textSize = 16f
+            setShadowLayer(10f, 0f, 0f, Color.parseColor("#AA000000"))
+            alpha = 0f
+            translationY = 16f * density
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            x = centerX - 96f * density
+            y = centerY - 46f * density
+        }
+        badgeOverlay.addView(badgeSubtitle)
+
+        repeat(10) { index ->
+            val starSize = ((22 + (index % 3) * 8) * density).toInt()
+            val startX = centerX + Random.nextInt(-170, 171) * density
+            val startY = centerY + Random.nextInt(-36, 76) * density
+            val star = ImageView(this).apply {
+                setImageResource(android.R.drawable.btn_star_big_on)
+                imageTintList = ColorStateList.valueOf(Color.parseColor("#FFD54F"))
+                alpha = 0f
+                layoutParams = FrameLayout.LayoutParams(starSize, starSize)
+                x = startX
+                y = startY
+            }
+            badgeOverlay.addView(star)
+
+            AnimatorSet().apply {
+                playTogether(
+                    ObjectAnimator.ofFloat(star, "alpha", 0f, 1f, 0f),
+                    ObjectAnimator.ofFloat(star, "translationY", 0f, -(120f + Random.nextFloat() * 280f) * density),
+                    ObjectAnimator.ofFloat(star, "translationX", 0f, Random.nextInt(-100, 101) * density),
+                    ObjectAnimator.ofFloat(star, "rotation", 0f, Random.nextInt(120, 361).toFloat()),
+                    ObjectAnimator.ofFloat(star, "scaleX", 0.7f, 1.2f, 0.9f),
+                    ObjectAnimator.ofFloat(star, "scaleY", 0.7f, 1.2f, 0.9f)
+                )
+                startDelay = (index * 55).toLong()
+                duration = 1600L
+                start()
+            }
+        }
+
+        AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(badgeTitle, "alpha", 0f, 1f, 0f),
+                ObjectAnimator.ofFloat(badgeTitle, "translationY", 20f * density, -26f * density),
+                ObjectAnimator.ofFloat(badgeSubtitle, "alpha", 0f, 1f, 0f),
+                ObjectAnimator.ofFloat(badgeSubtitle, "translationY", 16f * density, -14f * density)
+            )
+            duration = 1700L
+            start()
+        }
+
+        badgeOverlay.postDelayed({
+            badgeOverlay.removeAllViews()
+        }, 2200L)
+    }
+
+    private fun shareAchievementEmblem() {
+        runCatching {
+            val stats = buildEmblemStats()
+            val emblemFile = createAchievementEmblemPng(stats)
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                emblemFile
+            )
+            val caption = getString(
+                R.string.share_emblem_caption,
+                stats.totalScore,
+                stats.bestStreak,
+                stats.badgeLabel
+            )
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, caption)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newRawUri(getString(R.string.share_emblem_title), uri)
+            }
+            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_emblem_title)))
+        }.onFailure {
+            Toast.makeText(this, getString(R.string.share_emblem_failed), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun buildEmblemStats(): EmblemStats {
+        val totalScore = (1..30).sumOf { calculateDayScore(it) }
+        val bestStreak = getBestPerfectStreak()
+        val badgeLabel = getBadgeByStreak(bestStreak)
+        return EmblemStats(totalScore, bestStreak, badgeLabel)
+    }
+
+    private fun getBestPerfectStreak(): Int {
+        var best = 0
+        var current = 0
+        for (day in 1..30) {
+            if (isPerfectDay(day)) {
+                current++
+                best = max(best, current)
+            } else {
+                current = 0
+            }
+        }
+        return best
+    }
+
+    private fun createAchievementEmblemPng(stats: EmblemStats): File {
+        val width = 1080
+        val height = 1920
+        val scale = minOf(width / 1080f, height / 1920f)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                0f,
+                0f,
+                0f,
+                height.toFloat(),
+                Color.parseColor("#0B3D2E"),
+                Color.parseColor("#1F6F50"),
+                Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
+
+        val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#66FFD89B")
+        }
+        canvas.drawCircle(width * 0.15f, height * 0.12f, emblemPx(140f, scale), glowPaint)
+        canvas.drawCircle(width * 0.85f, height * 0.2f, emblemPx(90f, scale), glowPaint)
+
+        val cardRect = RectF(
+            emblemPx(56f, scale),
+            emblemPx(180f, scale),
+            width - emblemPx(56f, scale),
+            height - emblemPx(220f, scale)
+        )
+        val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#F9FFF8")
+        }
+        canvas.drawRoundRect(cardRect, emblemPx(28f, scale), emblemPx(28f, scale), cardPaint)
+        drawEmblemAchievementDecor(canvas, cardRect, scale, stats.totalScore)
+
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#0E4A36")
+            textSize = emblemPx(19f, scale)
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#2E5A48")
+            textSize = emblemPx(14f, scale)
+            textAlign = Paint.Align.CENTER
+        }
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#4A6A5A")
+            textSize = emblemPx(14f, scale)
+            textAlign = Paint.Align.CENTER
+        }
+        val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#0F362A")
+            textSize = emblemPx(34f, scale)
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        val badgeValuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#0F362A")
+            textSize = emblemPx(24f, scale)
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#567465")
+            textSize = emblemPx(12f, scale)
+            textAlign = Paint.Align.CENTER
+        }
+
+        val centerX = width / 2f
+        val hasHighScoreDecor = stats.totalScore >= 2000
+        var y = cardRect.top + emblemPx(if (hasHighScoreDecor) 248f else 88f, scale)
+        canvas.drawText(getString(R.string.emblem_heading), centerX, y, titlePaint)
+        y += emblemPx(42f, scale)
+        canvas.drawText(getString(R.string.emblem_subheading), centerX, y, subtitlePaint)
+
+        y += emblemPx(110f, scale)
+        canvas.drawText(getString(R.string.emblem_total_score_label), centerX, y, labelPaint)
+        y += emblemPx(58f, scale)
+        canvas.drawText("${stats.totalScore}/3000", centerX, y, valuePaint)
+
+        y += emblemPx(108f, scale)
+        canvas.drawText(getString(R.string.emblem_best_streak_label), centerX, y, labelPaint)
+        y += emblemPx(58f, scale)
+        canvas.drawText("${stats.bestStreak} hari", centerX, y, valuePaint)
+
+        y += emblemPx(108f, scale)
+        canvas.drawText(getString(R.string.emblem_badge_label), centerX, y, labelPaint)
+        y += emblemPx(54f, scale)
+        drawCenteredMultilineText(
+            canvas,
+            stats.badgeLabel,
+            centerX,
+            y,
+            cardRect.width() - emblemPx(100f, scale),
+            emblemPx(34f, scale),
+            badgeValuePaint
+        )
+
+        canvas.drawText(getString(R.string.emblem_footer), centerX, cardRect.bottom - emblemPx(44f, scale), footerPaint)
+
+        val emblemDir = File(cacheDir, "emblems").apply { mkdirs() }
+        cleanupOldEmblems(emblemDir, keepLatest = 10)
+        val emblemFile = File(emblemDir, "emblem-${System.currentTimeMillis()}.png")
+        FileOutputStream(emblemFile).use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+        }
+        bitmap.recycle()
+        return emblemFile
+    }
+
+    private fun drawEmblemAchievementDecor(canvas: Canvas, cardRect: RectF, scale: Float, totalScore: Int) {
+        if (totalScore < 2000) return
+
+        val centerX = cardRect.centerX()
+        val topY = cardRect.top + emblemPx(38f, scale)
+
+        if (totalScore >= 2700) {
+            drawTrophyIcon(canvas, centerX, topY + emblemPx(12f, scale), scale)
+        } else {
+            drawMedalIcon(canvas, centerX, topY + emblemPx(10f, scale), scale)
+        }
+
+        val starCount = if (totalScore >= 2700) 8 else if (totalScore >= 2400) 6 else 4
+        val starSize = emblemPx(36f, scale).toInt()
+        val startX = cardRect.left + emblemPx(54f, scale)
+        val endX = cardRect.right - emblemPx(54f, scale)
+        val arcDepth = emblemPx(30f, scale)
+
+        repeat(starCount) { index ->
+            val factor = if (starCount == 1) 0f else index.toFloat() / (starCount - 1).toFloat()
+            val x = startX + (endX - startX) * factor
+            val y = topY + kotlin.math.abs(factor - 0.5f) * arcDepth + emblemPx(8f, scale)
+            val drawable = ContextCompat.getDrawable(this, android.R.drawable.btn_star_big_on)?.mutate() ?: return
+            drawable.setTint(Color.parseColor("#F9A825"))
+            drawable.alpha = (210 + (index % 3) * 15).coerceAtMost(255)
+            drawable.setBounds(
+                (x - starSize / 2f).toInt(),
+                y.toInt(),
+                (x + starSize / 2f).toInt(),
+                (y + starSize).toInt()
+            )
+            drawable.draw(canvas)
+        }
+    }
+
+    private fun drawTrophyIcon(canvas: Canvas, centerX: Float, topY: Float, scale: Float) {
+        val cupWidth = emblemPx(112f, scale)
+        val cupHeight = emblemPx(86f, scale)
+        val stemHeight = emblemPx(34f, scale)
+        val baseWidth = emblemPx(88f, scale)
+        val baseHeight = emblemPx(20f, scale)
+
+        val goldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F9A825") }
+        val goldDarkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#C17900") }
+        val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#F9A825")
+            style = Paint.Style.STROKE
+            strokeWidth = emblemPx(8f, scale)
+        }
+
+        val cupRect = RectF(
+            centerX - cupWidth / 2f,
+            topY,
+            centerX + cupWidth / 2f,
+            topY + cupHeight
+        )
+        canvas.drawRoundRect(cupRect, emblemPx(18f, scale), emblemPx(18f, scale), goldPaint)
+
+        val leftHandleRect = RectF(
+            cupRect.left - emblemPx(30f, scale),
+            cupRect.top + emblemPx(14f, scale),
+            cupRect.left + emblemPx(8f, scale),
+            cupRect.top + emblemPx(56f, scale)
+        )
+        val rightHandleRect = RectF(
+            cupRect.right - emblemPx(8f, scale),
+            cupRect.top + emblemPx(14f, scale),
+            cupRect.right + emblemPx(30f, scale),
+            cupRect.top + emblemPx(56f, scale)
+        )
+        canvas.drawArc(leftHandleRect, 110f, 230f, false, handlePaint)
+        canvas.drawArc(rightHandleRect, -160f, 230f, false, handlePaint)
+
+        val stemRect = RectF(
+            centerX - emblemPx(14f, scale),
+            cupRect.bottom - emblemPx(4f, scale),
+            centerX + emblemPx(14f, scale),
+            cupRect.bottom + stemHeight
+        )
+        canvas.drawRoundRect(stemRect, emblemPx(8f, scale), emblemPx(8f, scale), goldDarkPaint)
+
+        val baseRect = RectF(
+            centerX - baseWidth / 2f,
+            stemRect.bottom - emblemPx(2f, scale),
+            centerX + baseWidth / 2f,
+            stemRect.bottom + baseHeight
+        )
+        canvas.drawRoundRect(baseRect, emblemPx(8f, scale), emblemPx(8f, scale), goldPaint)
+    }
+
+    private fun drawMedalIcon(canvas: Canvas, centerX: Float, topY: Float, scale: Float) {
+        val ribbonWidth = emblemPx(18f, scale)
+        val ribbonHeight = emblemPx(44f, scale)
+        val medalRadius = emblemPx(40f, scale)
+
+        val ribbonPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#2E7D32") }
+        val ribbonPaint2 = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#1565C0") }
+        val medalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F9A825") }
+        val medalInnerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#FFD54F") }
+
+        canvas.drawRect(centerX - ribbonWidth - emblemPx(6f, scale), topY, centerX - emblemPx(6f, scale), topY + ribbonHeight, ribbonPaint)
+        canvas.drawRect(centerX + emblemPx(6f, scale), topY, centerX + ribbonWidth + emblemPx(6f, scale), topY + ribbonHeight, ribbonPaint2)
+
+        val medalCy = topY + ribbonHeight + medalRadius
+        canvas.drawCircle(centerX, medalCy, medalRadius, medalPaint)
+        canvas.drawCircle(centerX, medalCy, medalRadius - emblemPx(9f, scale), medalInnerPaint)
+
+        val star = Path().apply {
+            val rOuter = medalRadius - emblemPx(15f, scale)
+            val rInner = rOuter * 0.46f
+            for (i in 0..9) {
+                val angle = Math.toRadians((i * 36.0) - 90.0)
+                val r = if (i % 2 == 0) rOuter else rInner
+                val x = centerX + (kotlin.math.cos(angle) * r).toFloat()
+                val y = medalCy + (kotlin.math.sin(angle) * r).toFloat()
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+            close()
+        }
+        val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#C17900") }
+        canvas.drawPath(star, starPaint)
+    }
+
+    private fun cleanupOldEmblems(directory: File, keepLatest: Int) {
+        val files = directory.listFiles { file ->
+            file.isFile && file.name.startsWith("emblem-") && file.extension.equals("png", ignoreCase = true)
+        }?.sortedByDescending { it.lastModified() }.orEmpty()
+
+        files.drop(keepLatest).forEach { oldFile ->
+            runCatching { oldFile.delete() }
+        }
+    }
+
+    private fun drawCenteredMultilineText(
+        canvas: Canvas,
+        text: String,
+        centerX: Float,
+        startY: Float,
+        maxWidth: Float,
+        lineHeight: Float,
+        paint: Paint
+    ) {
+        val words = text.trim().split(" ").filter { it.isNotBlank() }
+        if (words.isEmpty()) return
+
+        val lines = mutableListOf<String>()
+        var currentLine = ""
+        words.forEach { word ->
+            val candidate = if (currentLine.isBlank()) word else "$currentLine $word"
+            if (paint.measureText(candidate) <= maxWidth || currentLine.isBlank()) {
+                currentLine = candidate
+            } else {
+                lines.add(currentLine)
+                currentLine = word
+            }
+        }
+        if (currentLine.isNotBlank()) {
+            lines.add(currentLine)
+        }
+
+        var y = startY
+        lines.forEach { line ->
+            canvas.drawText(line, centerX, y, paint)
+            y += lineHeight
+        }
+    }
+
+    private fun emblemPx(value: Float, scale: Float): Float {
+        return value * scale
     }
 
     private fun getPerfectStreakUntil(day: Int): Int {
@@ -744,7 +1268,7 @@ class MainActivity : AppCompatActivity() {
             prefs.getBoolean(key(day, "witir"), false)
         ).all { it }
 
-        val puasaDone = isPuasaCompletedForDay(day)
+        val puasaDone = isPuasaValidForPerfectDay(day)
         val tadarusDone = prefs.getBoolean(key(day, "tadarus"), false)
         return allSholatDone && puasaDone && tadarusDone
     }
@@ -823,7 +1347,7 @@ class MainActivity : AppCompatActivity() {
             prefs.getBoolean(key(day, "tarawih"), false),
             prefs.getBoolean(key(day, "witir"), false)
         ).count { it }
-        val puasaDone = isPuasaCompletedForDay(day)
+        val puasaDone = isPuasaCountedForScoreForDay(day)
         val tadarusDone = prefs.getBoolean(key(day, "tadarus"), false)
         val completedItems = sholatDone + (if (puasaDone) 1 else 0) + (if (tadarusDone) 1 else 0)
         return (completedItems * 100) / 9
@@ -846,7 +1370,7 @@ class MainActivity : AppCompatActivity() {
             ).count { it }
 
             val sholatScore = (sholatCount * 100f) / 7f
-            val puasaScore = if (isPuasaCompletedForDay(day)) 100f else 0f
+            val puasaScore = if (isPuasaCountedForScoreForDay(day)) 100f else 0f
             val tadarusScore = if (prefs.getBoolean(key(day, "tadarus"), false)) 100f else 0f
 
             val x = (day - 1).toFloat()
@@ -1002,23 +1526,27 @@ class MainActivity : AppCompatActivity() {
         groupAlasanTidakPuasa.visibility = visibility
     }
 
-    private fun isPuasaCompletedForCurrentDay(): Boolean {
+    private fun isPuasaCountedForScoreForCurrentDay(): Boolean {
         val puasaValue = when (groupPuasa.checkedRadioButtonId) {
             radioPuasa.id -> "puasa"
             radioTidakPuasa.id -> "tidak"
             else -> ""
         }
-        val alasan = if (puasaValue == "tidak") getSelectedAlasanTidakPuasa() else ""
-        return isPuasaCompleted(puasaValue, alasan)
+        return isPuasaCountedForScore(puasaValue)
     }
 
-    private fun isPuasaCompletedForDay(day: Int): Boolean {
+    private fun isPuasaCountedForScoreForDay(day: Int): Boolean {
         val puasaValue = prefs.getString(key(day, "puasa"), "").orEmpty()
-        val alasan = prefs.getString(key(day, "alasan_tidak_puasa"), "").orEmpty()
-        return isPuasaCompleted(puasaValue, alasan)
+        return isPuasaCountedForScore(puasaValue)
     }
 
-    private fun isPuasaCompleted(puasaValue: String, alasanTidakPuasa: String): Boolean {
+    private fun isPuasaCountedForScore(puasaValue: String): Boolean {
+        return puasaValue == "puasa"
+    }
+
+    private fun isPuasaValidForPerfectDay(day: Int): Boolean {
+        val puasaValue = prefs.getString(key(day, "puasa"), "").orEmpty()
+        val alasanTidakPuasa = prefs.getString(key(day, "alasan_tidak_puasa"), "").orEmpty()
         return puasaValue == "puasa" || (puasaValue == "tidak" && alasanTidakPuasa.isNotBlank())
     }
 
